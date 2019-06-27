@@ -15,8 +15,12 @@ $ pip install -e .
 ```
 
 ### EffecientNet
-To use EfficientNet achitecture either follow the installation instructions from [here](https://github.com/lukemelas/EfficientNet-PyTorch) or install via pip:
+To use EfficientNet achitecture there are essentially two options. 
+
+**Option 1.** Using manuall installation described here [here](https://github.com/lukemelas/EfficientNet-PyTorch).
+
+**Option 2.** Using pip install:
 ```
 $ pip install efficientnet_pytorch
 ```
-**CURRENT PIP VERSION HAS BUGS USE MANUALL INSTALL** see fix in [commit](https://github.com/lukemelas/EfficientNet-PyTorch/commit/939d4abdeefc07e63d8bd42e7223365a4bc67942)
+As current pip version **has bugs** a hand-fix decribed in [commit](https://github.com/lukemelas/EfficientNet-PyTorch/commit/939d4abdeefc07e63d8bd42e7223365a4bc67942) is required.
