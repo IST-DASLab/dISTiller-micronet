@@ -24,3 +24,13 @@ To use EfficientNet achitecture there are essentially two options.
 $ pip install efficientnet_pytorch
 ```
 As current pip version **has bugs** a hand-fix decribed in [commit](https://github.com/lukemelas/EfficientNet-PyTorch/commit/939d4abdeefc07e63d8bd42e7223365a4bc67942) is required.
+
+### Troubleshooting
+
+The following issues are system and setup dependent.
+
+When trying to import pytorch on MacOSX, you may get `libomp.dylib can't be loaded` error. Then do `brew install libomp`.
+
+If you get `AttributeError: 'os' module does not have 'sched_getaffinity' method`, which is likely to occur in MacOSX and some Linux distributions, try replacing the line with `os.cpu_count()`.
+
+Also, do not forget `source setup.sh`.
