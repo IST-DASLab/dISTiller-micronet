@@ -19,3 +19,4 @@ To use EfficientNet achitecture either follow the installation instructions from
 ```
 $ pip install efficientnet_pytorch
 ```
+**CURRENT PIP VERSION HAS BUGS USE MANUALL INSTALL** see fix in [commit](https://github.com/lukemelas/EfficientNet-PyTorch/commit/939d4abdeefc07e63d8bd42e7223365a4bc67942)
