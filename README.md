@@ -13,3 +13,9 @@ If you want to use GPU support, ensure that your **CUDA.__version__==10** and in
 $ cd distiller-MicroNet
 $ pip install -e .
 ```
+
+### EffecientNet
+To use EfficientNet achitecture either follow the installation instructions from [here](https://github.com/lukemelas/EfficientNet-PyTorch) or install via pip:
+```
+$ pip install efficientnet_pytorch
+```
