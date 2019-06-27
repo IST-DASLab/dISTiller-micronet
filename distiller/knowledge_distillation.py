@@ -74,6 +74,11 @@ class KnowledgeDistillationPolicy(ScheduledTrainingPolicy):
             (see Note 1 above)
         temperature (float): Temperature value used when calculating soft targets and logits (see [1]).
         loss_weights (DistillationLossWeights): Named tuple with 3 loss weights
+            
+            **IMPORTANT CHANGES!!!**  
+            alpha * x + (1-alpha) * y, alpha = student coeff
+            **IMPORTANT CHANGES!!!**
+
             (a) 'distill' for student predictions (default: 0.5) vs. teacher soft-targets
             (b) 'student' for student predictions vs. true labels (default: 0.5)
             (c) 'teacher' for teacher predictions vs. true labels (default: 0). Currently this is just a placeholder,
@@ -158,6 +163,9 @@ class KnowledgeDistillationPolicy(ScheduledTrainingPolicy):
         # The loss passed to the callback is the student's loss vs. the true labels, so we can use it directly, no
         # need to calculate again
 
-        overall_loss = self.loss_wts.student * loss + self.loss_wts.distill * distillation_loss
+        overall_loss = (
+            self.loss_wts.student * loss + 
+            (1 - self.loss_wts.student) * distillation_loss * self.temperature**2
+        )
         return PolicyLoss(overall_loss,
                           [LossComponent('Distill Loss', distillation_loss)])
