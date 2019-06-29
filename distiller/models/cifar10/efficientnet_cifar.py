@@ -4,8 +4,8 @@
 import torch.nn as nn
 from efficientnet_pytorch import EfficientNet
 
-__all__ = ["efficientnet_cifar_b0", "efficientnet_cifar_b1",
-        "efficientnet_cifar_b2", "efficientnet_cifar_b3"]
+__all__ = ["efficientnetb0_cifar", "efficientnetb1_cifar",
+           "efficientnetb2_cifar", "efficientnetb3_cifar"]
 
 
 def get_efficientnet(which, pretrained=True):
@@ -16,18 +16,18 @@ def get_efficientnet(which, pretrained=True):
     else:
         raise NotImplementedError
 
-def efficientnet_cifar_b0():
+def efficientnetb0_cifar():
     return get_efficientnet("b0", True)
 
-def efficientnet_cifar_b1():
+def efficientnetb1_cifar():
     return get_efficientnet("b1", True)
 
-def efficientnet_cifar_b2():
+def efficientnetb2_cifar():
     return get_efficientnet("b2", True)
 
-def efficientnet_cifar_b3():
+def efficientnetb3_cifar():
     return get_efficientnet("b3", True)
 
 
 if __name__=="__main__":
-    efficientnet_cifar_b0()
+    efficientnetb0_cifar()

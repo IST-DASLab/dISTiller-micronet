@@ -1,0 +1,83 @@
+# This is a stupid Efficientnetb0 scheduler
+# it groups weights in order into 3 even groups
+
+version: 1
+pruners:
+  low_pruner:
+    class: AutomatedGradualPruner
+    initial_sparsity: 0.05
+    final_sparsity: 0.60
+    weights: ['module._conv_stem.weight', 'module._blocks.0._depthwise_conv.weight', 
+    'module._blocks.0._se_reduce.weight', 'module._blocks.0._se_expand.weight', 'module._blocks.0._project_conv.weight',
+    'module._blocks.1._expand_conv.weight', 'module._blocks.1._depthwise_conv.weight', 'module._blocks.1._se_reduce.weight',
+    'module._blocks.1._se_expand.weight', 'module._blocks.1._project_conv.weight', 'module._blocks.2._expand_conv.weight',
+    'module._blocks.2._depthwise_conv.weight', 'module._blocks.2._se_reduce.weight',
+    'module._blocks.2._se_expand.weight', 'module._blocks.2._project_conv.weight', 'module._blocks.3._expand_conv.weight',
+    'module._blocks.3._depthwise_conv.weight', 'module._blocks.3._se_reduce.weight',
+    'module._blocks.3._se_expand.weight', 'module._blocks.3._project_conv.weight', 'module._blocks.4._expand_conv.weight',
+    'module._blocks.4._depthwise_conv.weight', 'module._blocks.4._se_reduce.weight', 'module._blocks.4._se_expand.weight',
+    'module._blocks.4._project_conv.weight', 'module._blocks.5._expand_conv.weight', 'module._blocks.5._depthwise_conv.weight']
+
+  mid_pruner:
+    class: AutomatedGradualPruner
+    initial_sparsity: 0.05
+    final_sparsity: 0.67
+    weights: ['module._blocks.5._se_reduce.weight', 'module._blocks.5._se_expand.weight',
+    'module._blocks.5._project_conv.weight', 'module._blocks.6._expand_conv.weight', 'module._blocks.6._depthwise_conv.weight',
+    'module._blocks.6._se_reduce.weight', 'module._blocks.6._se_expand.weight',
+    'module._blocks.6._project_conv.weight', 'module._blocks.7._expand_conv.weight', 'module._blocks.7._depthwise_conv.weight',
+    'module._blocks.7._se_reduce.weight', 'module._blocks.7._se_expand.weight',
+    'module._blocks.7._project_conv.weight', 'module._blocks.8._expand_conv.weight', 'module._blocks.8._depthwise_conv.weight',
+    'module._blocks.8._se_reduce.weight', 'module._blocks.8._se_expand.weight',
+    'module._blocks.8._project_conv.weight', 'module._blocks.9._expand_conv.weight', 'module._blocks.9._depthwise_conv.weight', 
+    'module._blocks.9._se_reduce.weight', 'module._blocks.9._se_expand.weight', 'module._blocks.9._project_conv.weight',
+    'module._blocks.10._expand_conv.weight', 'module._blocks.10._depthwise_conv.weight', 'module._blocks.10._se_reduce.weight',
+    'module._blocks.10._se_expand.weight']
+
+  high_pruner:
+    class: AutomatedGradualPruner
+    initial_sparsity: 0.05
+    final_sparsity: 0.76
+    weights: ['module._blocks.10._project_conv.weight', 'module._blocks.11._expand_conv.weight',
+    'module._blocks.11._depthwise_conv.weight', 'module._blocks.11._se_reduce.weight', 'module._blocks.11._se_expand.weight',
+    'module._blocks.11._project_conv.weight', 'module._blocks.12._expand_conv.weight', 'module._blocks.12._depthwise_conv.weight',
+    'module._blocks.12._se_reduce.weight', 'module._blocks.12._se_expand.weight', 'module._blocks.12._project_conv.weight',
+    'module._blocks.13._expand_conv.weight', 'module._blocks.13._depthwise_conv.weight', 'module._blocks.13._se_reduce.weight',
+    'module._blocks.13._se_expand.weight', 'module._blocks.13._project_conv.weight', 'module._blocks.14._expand_conv.weight',
+    'module._blocks.14._depthwise_conv.weight', 'module._blocks.14._se_reduce.weight', 'module._blocks.14._se_expand.weight',
+    'module._blocks.14._project_conv.weight', 'module._blocks.15._expand_conv.weight', 'module._blocks.15._depthwise_conv.weight',
+    'module._blocks.15._se_reduce.weight', 'module._blocks.15._se_expand.weight', 'module._blocks.15._project_conv.weight',
+    'module._conv_head.weight', 'module._fc.weight']
+
+
+lr_schedulers:
+   pruning_lr:
+     class: ExponentialLR
+     gamma: 0.9
+
+
+policies:
+  - pruner:
+      instance_name : low_pruner
+    starting_epoch: 0
+    ending_epoch: 16
+    frequency: 2
+
+  - pruner:
+      instance_name : mid_pruner
+    starting_epoch: 4
+    ending_epoch: 16
+    frequency: 2
+
+  - pruner:
+      instance_name : high_pruner
+    starting_epoch: 4
+    ending_epoch: 16
+    frequency: 2
+
+  - lr_scheduler:
+      instance_name: pruning_lr
+    starting_epoch: 13
+    ending_epoch: 100
+    frequency: 1
+

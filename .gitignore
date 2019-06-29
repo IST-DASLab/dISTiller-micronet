@@ -27,3 +27,6 @@ distiller.egg-info/
 # Jupyter
 .ipynb_checkpoints/
 *egg
+
+# SFTP (keep private)
+sftp-config.json
