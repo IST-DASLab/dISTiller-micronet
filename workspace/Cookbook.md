@@ -21,6 +21,7 @@ rm ~/miniconda.sh
 echo "PATH=$PATH:$HOME/miniconda/bin" >> .bashrc
 exec bash
 conda create -n micronet python=3.7 anaconda  # and respond yes here
+conda activate micronet
 conda install pytorch torchvision cudatoolkit=10.0 -c pytorch  # pytorch with CUDA=10
 ```
 
