@@ -12,6 +12,8 @@ and `>> res = ['module.'+w for w in model.state_dict().keys() if (w.endswith(".w
 
 Install and configure [gcloud CLI tool](https://cloud.google.com/compute/docs/gcloud-compute/) on the local machine. Run `gcloud compute config-ssh` to create SSH configuration file in `~/.ssh/config` (or previously chosen location). Then use the hostname in the resulting config to ssh (from the local machine) into the instance and find out the username (`username@hostname`). Add `username` to `~/.ssh/config` as `User username`. After this, you should be able to use `ssh` as normal by `ssh username@hostname` without being prompted for the password and "Permission denied (publickey).". Enter these hostname and username into `sftp-config.json`, and you should be done.
 
+**NB:** after restarting the instance (stop-start), the external IP will change, hence you need to modify the `HostName` field in `~/.ssh/config` accordingly (new IP is found in the GC console).
+
 ## Setup from scratch (maybe transfer this to the README)
 
 ```
@@ -21,7 +23,8 @@ rm ~/miniconda.sh
 echo "PATH=$PATH:$HOME/miniconda/bin" >> .bashrc
 exec bash
 conda create -n micronet python=3.7 anaconda  # and respond yes here
+conda activate micronet
 conda install pytorch torchvision cudatoolkit=10.0 -c pytorch  # pytorch with CUDA=10
 ```
 
-now move on with the instructions from the README.
+now move on with the instructions from the README. With this installation, EfficientNet is fixed by editing `/home/$USER/miniconda/envs/micronet/lib/python3.7/site-packages/efficientnet_pytorch/utils.py`.

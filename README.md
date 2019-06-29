@@ -14,7 +14,10 @@ $ cd distiller-MicroNet
 $ pip install -e .
 ```
 
-### EffecientNet
+**Google cloud.** If you are using Google cloud or otherwise want to start installation from scratch, the [Cookbook](https://github.com/alexturn/distiller-MicroNet/blob/master/workspace/Cookbook.md) may be useful.
+
+
+### EfficientNet
 To use EfficientNet achitecture there are essentially two options. 
 
 **Option 1.** Using manuall installation described here [here](https://github.com/lukemelas/EfficientNet-PyTorch).
