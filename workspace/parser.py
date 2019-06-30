@@ -45,12 +45,15 @@ def get_parser():
     optimizer_args.add_argument('--lr', '--learning-rate', default=0.1,
                     type=float, metavar='LR', help='initial learning rate')
     optimizer_args.add_argument('--momentum', default=0.9, type=float,
-                    metavar='M', help='momentum')
+                    metavar='M', help='momentum (default: 0.9)')
     optimizer_args.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')
 
     parser.add_argument('--print-freq', '-p', default=10, type=int,
                         metavar='N', help='print frequency (default: 10)')
+    parser.add_argument('--noprint-weights-sparsity', '-nopws',
+                        dest='print_sparsity', action='store_false',
+                        help='disable printing weights sparsity (useful for training-only runs)')
 
     load_checkpoint_group = parser.add_argument_group('Resuming arguments')
     load_checkpoint_group_exc = load_checkpoint_group.add_mutually_exclusive_group()

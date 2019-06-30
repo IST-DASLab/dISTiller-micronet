@@ -1,0 +1,13 @@
+version: 1
+lr_schedulers:
+  # Learning rate decay scheduler
+  training_lr:
+    class: ExponentialLR
+    gamma: 0.95
+
+policies:
+  - lr_scheduler:
+      instance_name: training_lr
+    starting_epoch: 10
+    ending_epoch: 100
+    frequency: 1

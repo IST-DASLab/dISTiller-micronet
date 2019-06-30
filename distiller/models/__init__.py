@@ -102,11 +102,16 @@ def create_model(pretrained, dataset, arch, parallel=True, device_ids=None):
 
     elif dataset == 'cifar10':
         if pretrained:
-            raise ValueError("Model {} (CIFAR10) does not have a pretrained model".format(arch))
-        try:
-            model = cifar10_models.__dict__[arch]()
-        except KeyError:
-            raise ValueError("Model {} is not supported for dataset CIFAR10".format(arch))
+            # only EfficientNet currently can have a pretrained version (on ImageNet)
+            if arch.startswith("efficientnet"):
+                model = cifar10_models.__dict__[arch](pretrained=True)
+            else:
+                raise ValueError("Model {} (CIFAR10) does not have a pretrained model".format(arch))
+        else:
+            try:
+                model = cifar10_models.__dict__[arch]()
+            except KeyError:
+                raise ValueError("Model {} is not supported for dataset CIFAR10".format(arch))
 
     elif dataset == 'mnist':
         if pretrained:
