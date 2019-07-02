@@ -187,7 +187,7 @@ def main():
 
     if optimizer is None:
         optimizer = torch.optim.SGD(model.parameters(),
-            lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+            lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, nesterov=args.nesterov)
         msglogger.info('Optimizer Type: %s', type(optimizer))
         msglogger.info('Optimizer Args: %s', optimizer.defaults)
 

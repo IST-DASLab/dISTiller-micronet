@@ -1,13 +1,15 @@
 # This is a stupid Efficientnetb0 scheduler
 # it groups weights in order into 3 even groups
 
+# excluding 'module._conv_stem.weight', 'module._fc.weight'
+
 version: 1
 pruners:
   low_pruner:
     class: AutomatedGradualPruner
     initial_sparsity: 0.05
     final_sparsity: 0.60
-    weights: ['module._conv_stem.weight', 'module._blocks.0._depthwise_conv.weight', 
+    weights: ['module._blocks.0._depthwise_conv.weight', 
     'module._blocks.0._se_reduce.weight', 'module._blocks.0._se_expand.weight', 'module._blocks.0._project_conv.weight',
     'module._blocks.1._expand_conv.weight', 'module._blocks.1._depthwise_conv.weight', 'module._blocks.1._se_reduce.weight',
     'module._blocks.1._se_expand.weight', 'module._blocks.1._project_conv.weight', 'module._blocks.2._expand_conv.weight',
@@ -47,7 +49,7 @@ pruners:
     'module._blocks.14._depthwise_conv.weight', 'module._blocks.14._se_reduce.weight', 'module._blocks.14._se_expand.weight',
     'module._blocks.14._project_conv.weight', 'module._blocks.15._expand_conv.weight', 'module._blocks.15._depthwise_conv.weight',
     'module._blocks.15._se_reduce.weight', 'module._blocks.15._se_expand.weight', 'module._blocks.15._project_conv.weight',
-    'module._conv_head.weight', 'module._fc.weight']
+    'module._conv_head.weight']
 
 
 lr_schedulers:
@@ -60,19 +62,19 @@ policies:
   - pruner:
       instance_name : low_pruner
     starting_epoch: 0
-    ending_epoch: 16
+    ending_epoch: 10
     frequency: 2
 
   - pruner:
       instance_name : mid_pruner
     starting_epoch: 4
-    ending_epoch: 16
+    ending_epoch: 10
     frequency: 2
 
   - pruner:
       instance_name : high_pruner
     starting_epoch: 4
-    ending_epoch: 16
+    ending_epoch: 10
     frequency: 2
 
   - lr_scheduler:

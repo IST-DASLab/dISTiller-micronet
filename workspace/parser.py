@@ -48,6 +48,8 @@ def get_parser():
                     metavar='M', help='momentum (default: 0.9)')
     optimizer_args.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')
+    parser.add_argument('--nesterov', action='store_true',
+                        help='use Nesterov acceleration (default: false)')
 
     parser.add_argument('--print-freq', '-p', default=10, type=int,
                         metavar='N', help='print frequency (default: 10)')

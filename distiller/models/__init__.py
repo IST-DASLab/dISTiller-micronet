@@ -21,6 +21,7 @@ import copy
 import torch
 import torchvision.models as torch_models
 from . import cifar10 as cifar10_models
+from . import cifar100 as cifar100_models
 from . import mnist as mnist_models
 from . import imagenet as imagenet_extra_models
 import pretrainedmodels
@@ -49,12 +50,16 @@ CIFAR10_MODEL_NAMES = sorted(name for name in cifar10_models.__dict__
                              if name.islower() and not name.startswith("__")
                              and callable(cifar10_models.__dict__[name]))
 
+CIFAR100_MODEL_NAMES = sorted(name for name in cifar100_models.__dict__
+                              if name.islower() and not name.startswith("__")
+                              and callable(cifar100_models.__dict__[name]))
+
 MNIST_MODEL_NAMES = sorted(name for name in mnist_models.__dict__
                            if name.islower() and not name.startswith("__")
                            and callable(mnist_models.__dict__[name]))
 
 ALL_MODEL_NAMES = sorted(map(lambda s: s.lower(),
-                            set(IMAGENET_MODEL_NAMES + CIFAR10_MODEL_NAMES + MNIST_MODEL_NAMES)))
+                            set(IMAGENET_MODEL_NAMES + CIFAR10_MODEL_NAMES + CIFAR100_MODEL_NAMES + MNIST_MODEL_NAMES)))
 
 
 def create_model(pretrained, dataset, arch, parallel=True, device_ids=None):
@@ -112,6 +117,19 @@ def create_model(pretrained, dataset, arch, parallel=True, device_ids=None):
                 model = cifar10_models.__dict__[arch]()
             except KeyError:
                 raise ValueError("Model {} is not supported for dataset CIFAR10".format(arch))
+
+    elif dataset == 'cifar100':
+        if pretrained:
+            # only EfficientNet currently can have a pretrained version (on ImageNet)
+            if arch.startswith("efficientnet"):
+                model = cifar100_models.__dict__[arch](pretrained=True)
+            else:
+                raise ValueError("Model {} (CIFAR100) does not have a pretrained model".format(arch))
+        else:
+            try:
+                model = cifar100_models.__dict__[arch]()
+            except KeyError:
+                raise ValueError("Model {} is not supported for dataset CIFAR100".format(arch))
 
     elif dataset == 'mnist':
         if pretrained:

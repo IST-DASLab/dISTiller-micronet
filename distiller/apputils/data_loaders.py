@@ -28,12 +28,14 @@ import numpy as np
 import distiller
 
 
-DATASETS_NAMES = ['imagenet', 'cifar10', 'mnist']
+DATASETS_NAMES = ['imagenet', 'cifar10', 'cifar100', 'mnist']
 
 
 def classification_dataset_str_from_arch(arch):
-    if 'cifar' in arch:
-        dataset = 'cifar10' 
+    if 'cifar100' in arch:
+        dataset = 'cifar100'
+    elif 'cifar' in arch:
+        dataset = 'cifar10'
     elif 'mnist' in arch:
         dataset = 'mnist' 
     else:
@@ -50,7 +52,7 @@ def classification_num_classes(dataset):
 def classification_get_input_shape(dataset):
     if dataset == 'imagenet':
         return 1, 3, 224, 224
-    elif dataset == 'cifar10':
+    elif dataset in ('cifar10', 'cifar100'):
         return 1, 3, 32, 32
     elif dataset == 'mnist':
         return 1, 1, 28, 28
@@ -60,6 +62,7 @@ def classification_get_input_shape(dataset):
 
 def __dataset_factory(dataset):
     return {'cifar10': cifar10_get_datasets,
+            'cifar100': cifar100_get_datasets,
             'mnist': mnist_get_datasets,
             'imagenet': imagenet_get_datasets}.get(dataset, None)
 
@@ -134,11 +137,12 @@ def cifar10_get_datasets(data_dir):
     [1] C.-Y. Lee, S. Xie, P. Gallagher, Z. Zhang, and Z. Tu. Deeply Supervised Nets.
     arXiv:1409.5185, 2014
     """
+    # used to be: (0.5, 0.5, 0.5), (0.5, 0.5, 0.5)
     train_transform = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     ])
 
     train_dataset = datasets.CIFAR10(root=data_dir, train=True,
@@ -146,10 +150,32 @@ def cifar10_get_datasets(data_dir):
 
     test_transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     ])
 
     test_dataset = datasets.CIFAR10(root=data_dir, train=False,
+                                    download=True, transform=test_transform)
+
+    return train_dataset, test_dataset
+
+
+def cifar100_get_datasets(data_dir):
+    train_transform = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+    ])
+
+    train_dataset = datasets.CIFAR100(root=data_dir, train=True,
+                                     download=True, transform=train_transform)
+
+    test_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+    ])
+
+    test_dataset = datasets.CIFAR100(root=data_dir, train=False,
                                     download=True, transform=test_transform)
 
     return train_dataset, test_dataset
