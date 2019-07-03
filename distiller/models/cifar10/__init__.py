@@ -23,3 +23,4 @@ from .vgg_cifar import *
 from .resnet_cifar_earlyexit import *
 from .plain_cifar import *
 from .efficientnet_cifar import *
+from .mobilenet_cifar import *

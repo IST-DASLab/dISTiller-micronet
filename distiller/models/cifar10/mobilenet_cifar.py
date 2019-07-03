@@ -3,8 +3,10 @@
 from distiller.models.imagenet import *
 import torch.nn as nn
 
+__all__=['mobilenet_cifar', 'mobilenet_025_cifar', 'mobilenet_050_cifar', 'mobilenet_075_cifar']
+
 def preprocess_for_cifar10(model):
-    # TODO
+    model.fc = nn.Linear(model.channels[5], 10)
     return model
 
 def mobilenet_025_cifar():

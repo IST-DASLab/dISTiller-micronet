@@ -2,8 +2,9 @@ version: 1
 lr_schedulers:
   # Learning rate decay scheduler
   training_lr:
-    class: ExponentialLR
-    gamma: 0.9
+    class: StepLR
+    gamma: 0.2
+    step_size: 60
 
 # # attempt at regularizing different layers differently
 # regularizers:
@@ -96,6 +97,6 @@ lr_schedulers:
 policies:
   - lr_scheduler:
       instance_name: training_lr
-    starting_epoch: 10
-    ending_epoch: 150
-    frequency: 3
+    starting_epoch: 0
+    ending_epoch: 180
+    frequency: 1
