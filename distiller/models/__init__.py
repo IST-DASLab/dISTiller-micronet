@@ -68,7 +68,7 @@ def create_model(pretrained, dataset, arch, parallel=True, device_ids=None):
     Args:
         pretrained [boolean]: True is you wish to load a pretrained model.
             Some models do not have a pretrained version.
-        dataset: dataset name (only 'imagenet' and 'cifar10' are supported)
+        dataset: dataset name ('imagenet', 'cifar10' and 'cifar100' are supported)
         arch: architecture name
         parallel [boolean]: if set, use torch.nn.DataParallel
         device_ids: Devices on which model should be created -
@@ -80,7 +80,7 @@ def create_model(pretrained, dataset, arch, parallel=True, device_ids=None):
     dataset = dataset.lower()
     cadene = False
     if dataset == 'imagenet':
-        if arch in RESNET_SYMS:
+        if arch in RESNET_SYMS or arch.startswith("efficientnet"):
             model = imagenet_extra_models.__dict__[arch](pretrained=pretrained)
         elif arch in TORCHVISION_MODEL_NAMES:
             try:
