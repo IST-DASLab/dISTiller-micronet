@@ -8,44 +8,38 @@ pruners:
     initial_sparsity: 0.10
     final_sparsity: 0.6
     weights: ["module._blocks.0._depthwise_conv.weight",
-"module._blocks.0._se_reduce.weight",
+    "module._blocks.8._depthwise_conv.weight",
+    "module._blocks.9._depthwise_conv.weight",
 "module._blocks.1._depthwise_conv.weight",
-"module._blocks.1._se_reduce.weight",
 "module._blocks.2._depthwise_conv.weight",
-"module._blocks.2._se_reduce.weight",
 "module._blocks.3._depthwise_conv.weight",
-"module._blocks.3._se_reduce.weight",
 "module._blocks.4._depthwise_conv.weight",
-"module._blocks.4._se_reduce.weight",
 "module._blocks.5._depthwise_conv.weight",
-"module._blocks.5._se_reduce.weight",
 "module._blocks.6._depthwise_conv.weight",
-"module._blocks.6._se_reduce.weight",
 "module._blocks.7._depthwise_conv.weight",
-"module._blocks.7._se_reduce.weight",
-"module._blocks.8._depthwise_conv.weight",
-"module._blocks.8._se_reduce.weight",
-"module._blocks.9._depthwise_conv.weight",
-"module._blocks.9._se_reduce.weight",
-"module._blocks.10._depthwise_conv.weight",
-"module._blocks.10._se_reduce.weight",
-"module._blocks.11._depthwise_conv.weight",
-"module._blocks.11._se_reduce.weight",
+"module._blocks.0._project_conv.weight",
+"module._blocks.1._project_conv.weight",
+"module._blocks.2._expand_conv.weight",
+"module._blocks.2._project_conv.weight",
+"module._blocks.3._expand_conv.weight",
+"module._blocks.3._project_conv.weight",
+"module._blocks.4._expand_conv.weight",
+"module._blocks.4._project_conv.weight",
+"module._blocks.5._expand_conv.weight",
+"module._blocks.5._project_conv.weight",
+"module._blocks.6._expand_conv.weight",
+"module._blocks.6._project_conv.weight",
+
+"module._blocks.21._depthwise_conv.weight",
+"module._blocks.16._depthwise_conv.weight",
+
+"module._blocks.8._expand_conv.weight",
+"module._blocks.8._project_conv.weight",
+
+"module._blocks.16._expand_conv.weight",
+"module._blocks.16._project_conv.weight",
+
 "module._blocks.12._depthwise_conv.weight",
-"module._blocks.12._se_reduce.weight",
-"module._blocks.0._se_expand.weight",
-"module._blocks.1._se_expand.weight",
-"module._blocks.2._se_expand.weight",
-"module._blocks.3._se_expand.weight",
-"module._blocks.4._se_expand.weight",
-"module._blocks.5._se_expand.weight",
-"module._blocks.6._se_expand.weight",
-"module._blocks.7._se_expand.weight",
-"module._blocks.8._se_expand.weight",
-"module._blocks.9._se_expand.weight",
-"module._blocks.10._se_expand.weight",
-"module._blocks.11._se_expand.weight",
-"module._blocks.12._se_expand.weight",
 ]
 
   mid_pruner:
@@ -53,13 +47,9 @@ pruners:
     initial_sparsity: 0.6
     final_sparsity: 0.9
     weights: [
-"module._blocks.5._project_conv.weight",
-"module._blocks.6._expand_conv.weight",
-"module._blocks.6._project_conv.weight",
 "module._blocks.7._expand_conv.weight",
 "module._blocks.7._project_conv.weight",
-"module._blocks.8._expand_conv.weight",
-"module._blocks.8._project_conv.weight",
+
 "module._blocks.9._expand_conv.weight",
 "module._blocks.9._project_conv.weight",
 "module._blocks.10._expand_conv.weight",
@@ -74,8 +64,7 @@ pruners:
 "module._blocks.14._project_conv.weight",
 "module._blocks.15._expand_conv.weight",
 "module._blocks.15._project_conv.weight",
-"module._blocks.16._expand_conv.weight",
-"module._blocks.16._project_conv.weight",
+
 "module._blocks.17._expand_conv.weight",
 "module._blocks.17._project_conv.weight",
 "module._blocks.18._expand_conv.weight",
@@ -92,35 +81,72 @@ pruners:
 
   high_pruner:
     class: AutomatedGradualPruner
-    initial_sparsity: 0.4
-    final_sparsity: 0.45
+    initial_sparsity: 0.55
+    final_sparsity: 0.6
     weights: ["module._conv_head.weight",
-"module._fc.weight",
-"module._blocks.0._project_conv.weight",
-"module._blocks.1._project_conv.weight",
-"module._blocks.2._expand_conv.weight",
-"module._blocks.2._project_conv.weight",
-"module._blocks.3._expand_conv.weight",
-"module._blocks.3._project_conv.weight",
-"module._blocks.4._expand_conv.weight",
-"module._blocks.4._project_conv.weight",
-"module._blocks.5._expand_conv.weight",]
+"module._fc.weight"]
 
   higher_pruner:
     class: AutomatedGradualPruner
-    initial_sparsity: 0.45
-    final_sparsity: 0.5
+    initial_sparsity: 0.7
+    final_sparsity: 0.75
     weights: [
       "module._blocks.13._depthwise_conv.weight",
       "module._blocks.14._depthwise_conv.weight",
       "module._blocks.15._depthwise_conv.weight",
-      "module._blocks.16._depthwise_conv.weight",
+      
       "module._blocks.17._depthwise_conv.weight",
       "module._blocks.18._depthwise_conv.weight",
       "module._blocks.19._depthwise_conv.weight",
       "module._blocks.20._depthwise_conv.weight",
-      "module._blocks.21._depthwise_conv.weight",
+      
       "module._blocks.22._depthwise_conv.weight",
+      "module._blocks.10._depthwise_conv.weight",
+      "module._blocks.11._depthwise_conv.weight",
+      
+    ]
+  
+  _se_pruner:
+    class: AutomatedGradualPruner
+    initial_sparsity: 0.7
+    final_sparsity: 0.95
+    weights: [
+      "module._blocks.0._se_reduce.weight",
+      "module._blocks.1._se_reduce.weight",
+      "module._blocks.2._se_reduce.weight",
+      "module._blocks.3._se_reduce.weight",
+      "module._blocks.4._se_reduce.weight",
+      "module._blocks.5._se_reduce.weight",
+      "module._blocks.6._se_reduce.weight",
+      "module._blocks.7._se_reduce.weight",
+      "module._blocks.8._se_reduce.weight",
+      "module._blocks.9._se_reduce.weight",
+      "module._blocks.10._se_reduce.weight",
+      "module._blocks.11._se_reduce.weight",
+      "module._blocks.12._se_reduce.weight",
+      "module._blocks.13._se_reduce.weight",
+      "module._blocks.14._se_reduce.weight",
+      "module._blocks.15._se_reduce.weight",
+      "module._blocks.16._se_reduce.weight",
+      "module._blocks.17._se_reduce.weight",
+      "module._blocks.18._se_reduce.weight",
+      "module._blocks.19._se_reduce.weight",
+      "module._blocks.20._se_reduce.weight",
+      "module._blocks.21._se_reduce.weight",
+      "module._blocks.22._se_reduce.weight",
+      "module._blocks.0._se_expand.weight",
+      "module._blocks.1._se_expand.weight",
+      "module._blocks.2._se_expand.weight",
+      "module._blocks.3._se_expand.weight",
+      "module._blocks.4._se_expand.weight",
+      "module._blocks.5._se_expand.weight",
+      "module._blocks.6._se_expand.weight",
+      "module._blocks.7._se_expand.weight",
+      "module._blocks.8._se_expand.weight",
+      "module._blocks.9._se_expand.weight",
+      "module._blocks.10._se_expand.weight",
+      "module._blocks.11._se_expand.weight",
+      "module._blocks.12._se_expand.weight",
       "module._blocks.13._se_expand.weight",
       "module._blocks.14._se_expand.weight",
       "module._blocks.15._se_expand.weight",
@@ -131,22 +157,12 @@ pruners:
       "module._blocks.20._se_expand.weight",
       "module._blocks.21._se_expand.weight",
       "module._blocks.22._se_expand.weight",
-      "module._blocks.13._se_reduce.weight",
-      "module._blocks.14._se_reduce.weight",
-      "module._blocks.15._se_reduce.weight",
-      "module._blocks.16._se_reduce.weight",
-      "module._blocks.17._se_reduce.weight",
-      "module._blocks.18._se_reduce.weight",
-      "module._blocks.19._se_reduce.weight",
-      "module._blocks.20._se_reduce.weight",
-      "module._blocks.21._se_reduce.weight",
-      "module._blocks.22._se_reduce.weight"
     ]
 
   begin_pruner:
     class: AutomatedGradualPruner
-    initial_sparsity: 0.05
-    final_sparsity: 0.1
+    initial_sparsity: 0.3
+    final_sparsity: 0.35
     weights: ["module._conv_stem.weight", ]
 
 
@@ -160,36 +176,42 @@ policies:
   - pruner:
       instance_name : low_pruner
     starting_epoch: 0
-    ending_epoch: 11
-    frequency: 10
+    ending_epoch: 21
+    frequency: 20
 
   - pruner:
       instance_name : higher_pruner
     starting_epoch: 0
-    ending_epoch: 11
-    frequency: 10
+    ending_epoch: 21
+    frequency: 20
 
   - pruner:
       instance_name : mid_pruner
     starting_epoch: 0
-    ending_epoch: 11
-    frequency: 10
+    ending_epoch: 21
+    frequency: 20
 
   - pruner:
       instance_name : begin_pruner
     starting_epoch: 0
-    ending_epoch: 11
-    frequency: 10
+    ending_epoch: 21
+    frequency: 20
 
   - pruner:
       instance_name : high_pruner
     starting_epoch: 0
-    ending_epoch: 11
-    frequency: 10
+    ending_epoch: 21
+    frequency: 20
+
+  - pruner:
+      instance_name : _se_pruner
+    starting_epoch: 0
+    ending_epoch: 21
+    frequency: 20
 
   - lr_scheduler:
       instance_name: pruning_lr
     starting_epoch: 0
-    ending_epoch: 15
+    ending_epoch: 21
     frequency: 1
 
