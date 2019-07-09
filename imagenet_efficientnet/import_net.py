@@ -8,23 +8,35 @@ from distiller.apputils import load_checkpoint
 
 __all__ = ['get_masked_model']
 
-TEST_CHECKPOINT = '/nfs/scistore08/alistgrp/ashevche/distiller-data/checkpoints/effnet_imagenet_prune_base2\
-___2019.07.07-231317/effnet_imagenet_prune_base2_checkpoint.pth.tar'
-
 
 class MaskedNet(nn.Module):
-    def __init__(self, net, masks):
+    def __init__(self, net, maskers=None):
         super(MaskedNet, self).__init__()
         self.net = net
-        self.masks = dict()
+        self.hooks = None
+        self.masks = None
 
-        for name, param in self.net.named_parameters():
-            if name in masks.keys():
-                self.masks[name] = (param.data != 0).float()
-                param.register_hook(self._build_masking_hook(self.masks[name]))
+        if maskers is not None:
+            self.masks = {name: maskers[name].mask for name in maskers.keys()}
 
     def forward(self, in_tensor):
         return self.net(in_tensor)
+
+    def register_hooks(self):
+        if self.hooks is not None:
+            raise ValueError('Please remove previous hooks before new created')
+        if self.masks is None:
+            raise ValueError('The are no masks provided in the __init__')
+        for name, param in self.net.named_parameters:
+            self.hooks.append(
+                param.register_hook(self._build_masking_hook(self.masks[name]))
+            )
+
+    def remove_hooks(self):
+        if self.hooks is None:
+            raise ValueError('No hooks to remove')
+        for hook in self.hooks:
+            hook.remove()
 
     @staticmethod
     def _build_masking_hook(mask):
@@ -39,10 +51,4 @@ def get_masked_model(checkpoint):
 
 
 if __name__ == '__main__':
-    masked_net = get_masked_model(TEST_CHECKPOINT)
-    in_tensor = torch.ones(1, 3, 224, 224)
-    loss = nn.CrossEntropyLoss()(masked_net(in_tensor), torch.ones(1).long().cuda())
-    loss.backward()
-    for name, param in masked_net.net.named_parameters():
-        if name in masked_net.masks.keys():
-            print((param.grad.data == 0).sum())
+    pass
