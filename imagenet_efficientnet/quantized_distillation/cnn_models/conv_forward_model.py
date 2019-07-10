@@ -24,6 +24,7 @@ import sklearn.naive_bayes
 import sklearn.linear_model
 
 USE_CUDA = torch.cuda.is_available()
+DEVICES = torch.device("cuda")
 
 #These are the paper specification for teacher model and student model
 #Teacher model, 5.3 million parameters
@@ -176,7 +177,7 @@ def train_model(model, train_loader, test_loader, initial_learning_rate = 0.001,
     # 'truncated', where gradient values outside -1 and 1 are truncated to 0 (as per the paper
     # specified in the comments) and 'complicated', which is the temp name for my idea which is slow and complicated
     # to compute
-
+    
     if use_distillation_loss is True and teacher_model is None:
         raise ValueError('To compute distillation loss you have to pass the teacher model')
 
@@ -184,10 +185,11 @@ def train_model(model, train_loader, test_loader, initial_learning_rate = 0.001,
         teacher_model.eval()
 
     learning_rate_style = learning_rate_style.lower()
-    lr_scheduler = cnn_hf.LearningRateScheduler(initial_learning_rate, learning_rate_style)
+    #lr_scheduler = cnn_hf.LearningRateScheduler(initial_learning_rate, learning_rate_style)
     new_learning_rate = initial_learning_rate
     optimizer = optim.SGD(model.parameters(), lr=initial_learning_rate, nesterov=use_nesterov,
                           momentum=initial_momentum, weight_decay=weight_decayL2)
+    lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 0.9)
     startTime = time.time()
 
     pred_accuracy_epochs = []
@@ -235,7 +237,8 @@ def train_model(model, train_loader, test_loader, initial_learning_rate = 0.001,
         def quantize_weights_model(model):
             for idx, p in enumerate(model.parameters()):
                 if quantize_first_and_last_layer is False:
-                    if idx == 0 or idx == num_parameters-1:
+                    #if idx == 0 or idx == num_parameters-1:
+                    if idx != 1e10:
                         continue #don't quantize first and last layer
                 if backprop_quantization_style == 'truncated':
                     p.data.clamp_(-1, 1)
@@ -358,20 +361,21 @@ def train_model(model, train_loader, test_loader, initial_learning_rate = 0.001,
 
 
             #updating the learning rate
-            new_learning_rate, stop_training = lr_scheduler.update_learning_rate(epoch, 1-curr_pred_accuracy)
-            if stop_training is True:
-                break
-            for p in optimizer.param_groups:
-                try:
-                    p['lr'] = new_learning_rate
-                except:pass
+            lr_scheduler.step()
+            # new_learning_rate, stop_training = lr_scheduler.update_learning_rate(epoch, 1-curr_pred_accuracy)
+            # if stop_training is True:
+            #     break
+            # for p in optimizer.param_groups:
+            #     try:
+            #         p['lr'] = new_learning_rate
+            #     except:pass
 
-    except Exception as e:
-        print('An exception occurred: {}\n. Training has been stopped after {} epochs.'.format(e, epoch))
-        informationDict['errorFlag'] = True
-        informationDict['numEpochsTrained'] = epoch-start_epoch
+    # except Exception as e:
+    #     print('An exception occurred: {}\n. Training has been stopped after {} epochs.'.format(e, epoch))
+    #     informationDict['errorFlag'] = True
+    #     informationDict['numEpochsTrained'] = epoch-start_epoch
 
-        return model, informationDict
+    #     return model, informationDict
     except KeyboardInterrupt:
         print('User stopped training after {} epochs'.format(epoch))
         informationDict['errorFlag'] = False
@@ -459,8 +463,8 @@ def optimize_quantization_points(modelToQuantize, train_loader, test_loader, ini
                 currPointsPerTensor = numPointsPerTensor[idx-1]
             initial_points = quantization.help_functions.initialize_quantization_points(p.data,
                                                                                         scalingFunction,
-                                                                                        currPointsPerTensor)
-            initial_points = Variable(initial_points, requires_grad=True)
+                                                                                        currPointsPerTensor).detach()
+            initial_points.requires_grad = True
             # do a dummy backprop so that the grad attribute is initialized. We need this because we call
             # the .backward() function manually later on (since pytorch can't assign variables to model
             # parameters)
@@ -468,9 +472,9 @@ def optimize_quantization_points(modelToQuantize, train_loader, test_loader, ini
             pointsPerTensor.append(initial_points)
     elif initialize_method == 'uniform':
         for numPoint in numPointsPerTensor:
-            initial_points = torch.FloatTensor([x/(numPoint-1) for x in range(numPoint)])
-            if USE_CUDA: initial_points = initial_points.cuda()
-            initial_points = Variable(initial_points, requires_grad=True)
+            initial_points = torch.FloatTensor([x/(numPoint-1) for x in range(numPoint)]).detach()
+            if USE_CUDA: initial_points = initial_points.to(DEVICES)
+            initial_points.requires_grad = True
             # do a dummy backprop so that the grad attribute is initialized. We need this because we call
             # the .backward() function manually later on (since pytorch can't assign variables to model
             # parameters)

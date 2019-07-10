@@ -8,20 +8,21 @@ import helpers.functions as mhf
 import random
 
 USE_CUDA = torch.cuda.is_available()
+DEVICE = 'cuda'
 
 def time_forward_pass(model, train_loader):
+    with torch.no_grad():
 
-    model.eval()
-    start_time = time.time()
-    for idx_minibatch, data in enumerate(train_loader):
+        model.eval()
+        start_time = time.time()
+        for idx_minibatch, data in enumerate(train_loader):
 
-        # get the inputs
-        inputs, labels = data
-        inputs, labels = Variable(inputs, volatile=True), Variable(labels)
-        if USE_CUDA:
-            inputs = inputs.cuda()
-            labels = labels.cuda()
-        outputs = model(inputs)
+            # get the inputs
+            inputs, labels = data
+            if USE_CUDA:
+                inputs = inputs.to(DEVICE)
+                labels = labels.to(DEVICE)
+            outputs = model(inputs)
 
     end_time = time.time()
     return end_time - start_time
@@ -31,29 +32,28 @@ def evaluateModel(model, testLoader, fastEvaluation=True, maxExampleFastEvaluati
 
     'if fastEvaluation is True, it will only check a subset of *maxExampleFastEvaluation* images of the test set'
 
+    with torch.no_grad():
+        model.eval()
+        correctClass = 0
+        totalNumExamples = 0
 
-    model.eval()
-    correctClass = 0
-    totalNumExamples = 0
+        for idx_minibatch, data in enumerate(testLoader):
 
-    for idx_minibatch, data in enumerate(testLoader):
+            # get the inputs
+            inputs, labels = data
+            if USE_CUDA:
+                inputs = inputs.to(DEVICE)
+                labels = labels.to(DEVICE)
 
-        # get the inputs
-        inputs, labels = data
-        inputs, labels = Variable(inputs, volatile=True), Variable(labels)
-        if USE_CUDA:
-            inputs = inputs.cuda()
-            labels = labels.cuda()
+            outputs = model(inputs)
+            _, topk_predictions = outputs.topk(k, dim=1, largest=True, sorted=True)
+            topk_predictions = topk_predictions.t()
+            correct = topk_predictions.eq(labels.view(1, -1).expand_as(topk_predictions))
+            correctClass += correct.view(-1).float().sum(0, keepdim=True).item()
+            totalNumExamples += len(labels)
 
-        outputs = model(inputs)
-        _, topk_predictions = outputs.topk(k, dim=1, largest=True, sorted=True)
-        topk_predictions = topk_predictions.t()
-        correct = topk_predictions.eq(labels.view(1, -1).expand_as(topk_predictions))
-        correctClass += correct.view(-1).float().sum(0, keepdim=True).data[0]
-        totalNumExamples += len(labels)
-
-        if fastEvaluation is True and totalNumExamples > maxExampleFastEvaluation:
-            break
+            if fastEvaluation is True and totalNumExamples > maxExampleFastEvaluation:
+                break
 
     return correctClass / totalNumExamples
 
@@ -68,7 +68,7 @@ def forward_and_backward(model, batch, idx_batch, epoch, criterion=None,
     if criterion is None:
         criterion = nn.CrossEntropyLoss()
     if USE_CUDA:
-        criterion = criterion.cuda()
+        criterion = criterion.to(DEVICE)
 
     if use_distillation_loss is True and teacher_model is None:
         raise ValueError('To compute distillation loss you need to pass the teacher model')
@@ -78,10 +78,9 @@ def forward_and_backward(model, batch, idx_batch, epoch, criterion=None,
 
     inputs, labels = batch
     # wrap them in Variable
-    inputs, labels = Variable(inputs), Variable(labels)
     if USE_CUDA:
-        inputs = inputs.cuda()
-        labels = labels.cuda()
+        inputs = inputs.to('cuda')
+        labels = labels.to('cuda')
 
     # forward + backward + optimize
     outputs = model(inputs)
@@ -115,23 +114,25 @@ def forward_and_backward(model, batch, idx_batch, epoch, criterion=None,
         index_distillation_loss = torch.arange(0, outputs.size(0))[mask_distillation_loss.view(-1, 1)].long()
         inverse_idx_distill_loss = torch.arange(0, outputs.size(0))[1-mask_distillation_loss.view(-1, 1)].long()
         if USE_CUDA:
-            index_distillation_loss = index_distillation_loss.cuda()
-            inverse_idx_distill_loss = inverse_idx_distill_loss.cuda()
+            index_distillation_loss = index_distillation_loss.to(DEVICE)
+            inverse_idx_distill_loss = inverse_idx_distill_loss.to(DEVICE)
 
         # this criterion is the distillation criterion according to Hinton's paper:
         # "Distilling the Knowledge in a Neural Network", Hinton et al.
 
         softmaxFunction, logSoftmaxFunction, KLDivLossFunction  = nn.Softmax(dim=1), nn.LogSoftmax(dim=1), nn.KLDivLoss()
         if USE_CUDA:
-            softmaxFunction, logSoftmaxFunction = softmaxFunction.cuda(), logSoftmaxFunction.cuda(),
-            KLDivLossFunction = KLDivLossFunction.cuda()
+            softmaxFunction, logSoftmaxFunction = softmaxFunction.to(DEVICE), logSoftmaxFunction.to(DEVICE),
+            KLDivLossFunction = KLDivLossFunction.to(DEVICE)
 
         if index_distillation_loss.size() != torch.Size():
             count_asked_teacher = index_distillation_loss.numel()
             # if index_distillation_loss is not empty
-            volatile_inputs = Variable(inputs.data[index_distillation_loss, :], requires_grad=False)
-            if USE_CUDA: volatile_inputs = volatile_inputs.cuda()
-            outputsTeacher = teacher_model(volatile_inputs).detach()
+            with torch.no_grad():
+                volatile_inputs = inputs.data[index_distillation_loss, :]
+                if USE_CUDA: 
+                    volatile_inputs = volatile_inputs.to(DEVICE)
+                outputsTeacher = teacher_model(volatile_inputs).detach()
             loss_masked = weight_teacher_loss * temperature_distillation**2 * KLDivLossFunction(
                     logSoftmaxFunction(outputs[index_distillation_loss, :]/ temperature_distillation),
                     softmaxFunction(outputsTeacher / temperature_distillation))
@@ -153,9 +154,9 @@ def forward_and_backward(model, batch, idx_batch, epoch, criterion=None,
 
     if return_more_info:
         count_total = inputs.size(0)
-        return loss.data[0], count_asked_teacher, count_total
+        return loss.item(), count_asked_teacher, count_total
     else:
-        return loss.data[0]
+        return loss.item()
 
 def add_gradient_noise(model, idx_batch, epoch, number_minibatches_per_epoch):
     # Adding random gaussian noise as in the paper "Adding gradient noise improves learning
@@ -163,7 +164,8 @@ def add_gradient_noise(model, idx_batch, epoch, number_minibatches_per_epoch):
 
     for p in model.parameters():
         gaussianNoise = torch.Tensor(p.grad.size())
-        if USE_CUDA: gaussianNoise = gaussianNoise.cuda()
+        if USE_CUDA: 
+            gaussianNoise = gaussianNoise.to(DEVICE)
         # here nu = 0.01, gamma = 0.55, t is the minibatch count = epoch*total_length +idx_minibatch
         stdDev = (0.01 / (1 + epoch * number_minibatches_per_epoch + idx_batch) ** 0.55) ** 0.5
         gaussianNoise.normal_(0, std=stdDev)
