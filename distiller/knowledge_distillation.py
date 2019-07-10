@@ -125,7 +125,7 @@ class KnowledgeDistillationPolicy(ScheduledTrainingPolicy):
             self.last_teacher_logits = self.teacher(*inputs)
 
         out = self.student(*inputs)
-        self.last_students_logits = out.new_tensor(out, requires_grad=True)
+        self.last_students_logits = out.clone().detach().requires_grad_(True)
 
         return out
 
@@ -134,7 +134,7 @@ class KnowledgeDistillationPolicy(ScheduledTrainingPolicy):
     def on_epoch_begin(self, model, zeros_mask_dict, meta, **kwargs):
         self.active = True
 
-    def on_epoch_end(self, model, zeros_mask_dict, meta):
+    def on_epoch_end(self, model, zeros_mask_dict, meta, **kwargs):
         self.active = False
 
     def before_backward_pass(self, model, epoch, minibatch_id, minibatches_per_epoch, loss, zeros_mask_dict,
@@ -158,7 +158,7 @@ class KnowledgeDistillationPolicy(ScheduledTrainingPolicy):
         # The averaging used in PyTorch KL Div implementation is wrong, so we work around as suggested in
         # https://pytorch.org/docs/stable/nn.html#kldivloss
         # (Also see https://github.com/pytorch/pytorch/issues/6622, https://github.com/pytorch/pytorch/issues/2259)
-        distillation_loss = F.kl_div(soft_log_probs, soft_targets.detach(), size_average=False) / soft_targets.shape[0]
+        distillation_loss = F.kl_div(soft_log_probs, soft_targets.detach(), reduction='sum') / soft_targets.shape[0]
 
         # The loss passed to the callback is the student's loss vs. the true labels, so we can use it directly, no
         # need to calculate again
