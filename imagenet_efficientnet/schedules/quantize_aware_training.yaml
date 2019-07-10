@@ -1,0 +1,40 @@
+quantizers:
+  linear_quantizer:
+    class: QuantAwareTrainRangeLinearQuantizer
+    bits_activations: 4
+    bits_weights: 4
+    mode: 'ASYMMETRIC_UNSIGNED'  # Can try "SYMMETRIC" as well
+    ema_decay: 0.99   # Decay value for exponential moving average tracking of activation ranges
+    per_channel_wts: True
+    overrides:
+      '.*':
+        bits_bias: null
+      _fc:
+        bits_bias: null
+        bits_weights: null
+        bits_activations: null
+      _conv_stem:
+        bits_bias: null
+        bits_weights: null
+        bits_activations: null
+
+lr_schedulers:
+   pruning_lr:
+     class: ExponentialLR
+     gamma: 0.9
+
+
+policies:
+    - quantizer:
+        instance_name: linear_quantizer
+      # For now putting a large range here, which should cover both training from scratch or resuming from some
+      # pre-trained checkpoint at some unknown epoch
+      starting_epoch: 0
+      ending_epoch: 300
+      frequency: 1
+
+    - lr_scheduler:
+        instance_name: pruning_lr
+      starting_epoch: 0
+      ending_epoch: 300
+      frequency: 1
