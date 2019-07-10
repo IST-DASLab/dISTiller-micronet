@@ -28,6 +28,8 @@ from .quantizer import Quantizer
 from .q_utils import *
 import distiller.modules
 
+import efficientnet_pytorch
+
 msglogger = logging.getLogger()
 
 
@@ -863,6 +865,7 @@ class PostTrainLinearQuantizer(Quantizer):
 
         self.replacement_factory[nn.Conv2d] = replace_param_layer
         self.replacement_factory[nn.Linear] = replace_param_layer
+        self.replacement_factory[efficientnet_pytorch.utils.Conv2dSamePadding] = replace_param_layer
 
         self.replacement_factory[distiller.modules.Concat] = partial(
             replace_non_param_layer, RangeLinearQuantConcatWrapper)
@@ -998,7 +1001,7 @@ class FakeQuantizationWrapper(nn.Module):
 class QuantAwareTrainRangeLinearQuantizer(Quantizer):
     def __init__(self, model, optimizer=None, bits_activations=32, bits_weights=32, bits_bias=32,
                  overrides=None, mode=LinearQuantMode.SYMMETRIC, ema_decay=0.999, per_channel_wts=False,
-                 quantize_inputs=True, num_bits_inputs=None):
+                 quantize_inputs=False, num_bits_inputs=None):
         super(QuantAwareTrainRangeLinearQuantizer, self).__init__(model, optimizer=optimizer,
                                                                   bits_activations=bits_activations,
                                                                   bits_weights=bits_weights,
