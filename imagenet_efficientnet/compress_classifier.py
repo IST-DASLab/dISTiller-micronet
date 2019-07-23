@@ -187,7 +187,7 @@ def main():
 
     if optimizer is None:
         optimizer = torch.optim.SGD(model.parameters(),
-            lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, nesterov=args.nesterov)
+            lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
         msglogger.info('Optimizer Type: %s', type(optimizer))
         msglogger.info('Optimizer Args: %s', optimizer.defaults)
 
@@ -283,8 +283,7 @@ def main():
         with collectors_context(activations_collectors["train"]) as collectors:
             train(train_loader, model, criterion, optimizer, epoch, compression_scheduler,
                   loggers=[tflogger, pylogger], args=args)
-            if args.print_sparsity:
-                distiller.log_weights_sparsity(model, epoch, loggers=[tflogger, pylogger])
+            distiller.log_weights_sparsity(model, epoch, loggers=[tflogger, pylogger])
             distiller.log_activation_statsitics(epoch, "train", loggers=[tflogger],
                                                 collector=collectors["sparsity"])
             if args.masks_sparsity:
@@ -292,7 +291,7 @@ def main():
 
         # evaluate on validation set
         with collectors_context(activations_collectors["valid"]) as collectors:
-            top1, top5, vloss = validate(val_loader, model, criterion, [pylogger], args, epoch)
+            top1, top5, vloss = validate(test_loader, model, criterion, [pylogger], args, epoch)
             distiller.log_activation_statsitics(epoch, "valid", loggers=[tflogger],
                                                 collector=collectors["sparsity"])
             save_collectors_data(collectors, msglogger.logdir)
@@ -315,9 +314,6 @@ def main():
                              'best_epoch': perf_scores_history[0].epoch}
         apputils.save_checkpoint(epoch, args.arch, model, optimizer=optimizer, scheduler=compression_scheduler,
                                  extras=checkpoint_extras, is_best=is_best, name=args.name, dir=msglogger.logdir)
-
-        # ADDED: look at learning rate
-        msglogger.info(f'\n==> Learning rate: {get_lr(optimizer)}')
 
     # Finally run results on the test set
     test(test_loader, model, criterion, [pylogger], activations_collectors, args=args)
@@ -776,9 +772,6 @@ def save_collectors_data(collectors, directory):
         file_path = collector.save(os.path.join(directory, name))
         msglogger.info("Saved to {}".format(file_path))
 
-def get_lr(optimizer):
-    for param_group in optimizer.param_groups:
-        return param_group['lr']
 
 def check_pytorch_version():
     from pkg_resources import parse_version

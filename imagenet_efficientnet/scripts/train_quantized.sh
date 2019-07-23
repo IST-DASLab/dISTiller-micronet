@@ -1,7 +1,7 @@
 EXP_NAME="effnet_imagenet_train_quantized"
 CHECKPOINT_ROOT="/nfs/scistore08/alistgrp/ashevche/distiller-data/checkpoints"
 ARCH="efficientnetb1"
-DATAPATH="/nfs/scistore08/alistgrp/ashevche/distiller-data/data.imagenet"
+DATAPATH="/home/imarkov/imagenet"
 CHECKPOINT="/nfs/scistore08/alistgrp/ashevche/distiller-data/checkpoints/effnet_imagenet_prune_base2___2019.07.07-231317/\
 effnet_imagenet_prune_base2_checkpoint.pth.tar"
 

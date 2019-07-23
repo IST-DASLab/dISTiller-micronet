@@ -5,8 +5,8 @@ version: 1
 pruners:
   low_pruner:
     class: AutomatedGradualPruner
-    initial_sparsity: 0.25
-    final_sparsity: 0.6
+    initial_sparsity: 0.05
+    final_sparsity: 0.25
     weights: ["module._blocks.0._depthwise_conv.weight",
     "module._blocks.8._depthwise_conv.weight",
     "module._blocks.9._depthwise_conv.weight",
@@ -44,8 +44,8 @@ pruners:
 
   mid_pruner:
     class: AutomatedGradualPruner
-    initial_sparsity: 0.6
-    final_sparsity: 0.9
+    initial_sparsity: 0.05
+    final_sparsity: 0.6
     weights: [
 "module._blocks.7._expand_conv.weight",
 "module._blocks.7._project_conv.weight",
@@ -81,15 +81,15 @@ pruners:
 
   high_pruner:
     class: AutomatedGradualPruner
-    initial_sparsity: 0.65
-    final_sparsity: 0.66
+    initial_sparsity: 0.05
+    final_sparsity: 0.65
     weights: ["module._conv_head.weight",
 "module._fc.weight"]
 
   higher_pruner:
     class: AutomatedGradualPruner
-    initial_sparsity: 0.7
-    final_sparsity: 0.75
+    initial_sparsity: 0.05
+    final_sparsity: 0.7
     weights: [
       "module._blocks.13._depthwise_conv.weight",
       "module._blocks.14._depthwise_conv.weight",
@@ -108,8 +108,8 @@ pruners:
   
   _se_pruner:
     class: AutomatedGradualPruner
-    initial_sparsity: 0.7
-    final_sparsity: 0.95
+    initial_sparsity: 0.05
+    final_sparsity: 0.7
     weights: [
       "module._blocks.0._se_reduce.weight",
       "module._blocks.1._se_reduce.weight",
@@ -161,8 +161,8 @@ pruners:
 
   begin_pruner:
     class: AutomatedGradualPruner
-    initial_sparsity: 0.3
-    final_sparsity: 0.35
+    initial_sparsity: 0.05
+    final_sparsity: 0.3
     weights: ["module._conv_stem.weight", ]
 
 
@@ -176,42 +176,42 @@ policies:
   - pruner:
       instance_name : low_pruner
     starting_epoch: 0
-    ending_epoch: 21
-    frequency: 20
+    ending_epoch: 20
+    frequency: 2
 
   - pruner:
       instance_name : higher_pruner
     starting_epoch: 0
-    ending_epoch: 21
-    frequency: 20
+    ending_epoch: 20
+    frequency: 2
 
   - pruner:
       instance_name : mid_pruner
     starting_epoch: 0
-    ending_epoch: 21
-    frequency: 20
+    ending_epoch: 20
+    frequency: 2
 
   - pruner:
       instance_name : begin_pruner
     starting_epoch: 0
-    ending_epoch: 21
-    frequency: 20
+    ending_epoch: 20
+    frequency: 2
 
   - pruner:
       instance_name : high_pruner
     starting_epoch: 0
-    ending_epoch: 21
-    frequency: 20
+    ending_epoch: 20
+    frequency: 2
 
   - pruner:
       instance_name : _se_pruner
     starting_epoch: 0
-    ending_epoch: 21
-    frequency: 20
+    ending_epoch: 20
+    frequency: 2
 
   - lr_scheduler:
       instance_name: pruning_lr
-    starting_epoch: 0
-    ending_epoch: 21
+    starting_epoch: 20
+    ending_epoch: 40
     frequency: 1
 
