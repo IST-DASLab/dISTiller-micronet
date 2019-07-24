@@ -1,5 +1,5 @@
 # Distiller MicroNet
-Forked [Distiller](https://github.com/NervanaSystems/distiller/tree/torch1.1-integration) repository for the NeurIPS 2019 MicroNet challenge
+We have forked the [Distiller](https://github.com/NervanaSystems/distiller/tree/torch1.1-integration) repository for the NeurIPS 2019 MicroNet challenge
 
 ## Setup
 
