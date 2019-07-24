@@ -14,7 +14,7 @@ $ cd distiller-MicroNet
 $ pip install -e .
 ```
 
-**Google cloud.** If you are using Google cloud or otherwise want to start installation from scratch, the [Cookbook](https://github.com/alexturn/distiller-MicroNet/blob/master/workspace/Cookbook.md) may be useful.
+**Google Cloud.** If you are using Google cloud or otherwise want to start installation from scratch, the [Cookbook](https://github.com/alexturn/distiller-MicroNet/blob/master/workspace/Cookbook.md) may be useful.
 
 
 ### EfficientNet
