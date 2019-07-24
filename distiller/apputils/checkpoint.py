@@ -15,7 +15,6 @@
 #
 
 """ Helper code for checkpointing models, with support for saving the pruning schedule.
-
 Adding the schedule information in the model checkpoint is helpful in resuming
 a pruning session, or for querying the pruning schedule of a sparse model.
 """
@@ -35,7 +34,6 @@ msglogger = logging.getLogger()
 def save_checkpoint(epoch, arch, model, optimizer=None, scheduler=None,
                     extras=None, is_best=False, name=None, dir='.'):
     """Save a pytorch training checkpoint
-
     Args:
         epoch: current epoch number
         arch: name of the network architecture/topology
@@ -104,7 +102,6 @@ def get_contents_table(d):
 def load_checkpoint(model, chkpt_file, optimizer=None, model_device=None, *, 
                     lean_checkpoint=False, strict=False):
     """Load a pytorch training checkpoint.
-
     Args:
         model: the pytorch model to which we will load the parameters
         chkpt_file: the checkpoint file
@@ -161,7 +158,7 @@ def load_checkpoint(model, chkpt_file, optimizer=None, model_device=None, *,
         msglogger.info('Loaded quantizer metadata from the checkpoint')
         qmd = checkpoint['quantizer_metadata']
         quantizer = qmd['type'](model, **qmd['params'])
-        quantizer.prepare_model()
+        quantizer.prepare_model(qmd['dummy_input'])
 
     if normalize_dataparallel_keys:
             checkpoint['state_dict'] = {normalize_module_name(k): v for k, v in checkpoint['state_dict'].items()}

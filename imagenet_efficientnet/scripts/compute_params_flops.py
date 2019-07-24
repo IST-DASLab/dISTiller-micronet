@@ -13,7 +13,7 @@ BEST_CKPT_PATH = '../checkpoints/effnet_imagenet_prune_base2_best.pth.tar'
 DATASET_NAME = 'imagenet'
 MODEL_NAME = 'efficientnetb1'
 
-FULL_PRECISION_LAYERS = ['_fc', '_conv_stem']
+FULL_PRECISION_LAYERS = ['_conv_stem']
 RATIO = 4
 
 
@@ -51,6 +51,9 @@ def measure_effnet_storage(state_dict):
         if _is_not_quantized(name): 
             curr_ratio = 1.
 
+        if '_fc.weight' in name:
+            curr_ratio = 16. / 3.
+
         total += param.numel()
         if _is_not_pruned(name):
             total_used += param.numel() / curr_ratio
@@ -58,6 +61,9 @@ def measure_effnet_storage(state_dict):
             total_used += (param != 0).float().sum()  / curr_ratio
         
     return total_used.item(), total
+
+def measure_effnet_flops(model):
+    pass
 
 
 

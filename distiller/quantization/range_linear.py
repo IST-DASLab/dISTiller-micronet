@@ -865,7 +865,7 @@ class PostTrainLinearQuantizer(Quantizer):
 
         self.replacement_factory[nn.Conv2d] = replace_param_layer
         self.replacement_factory[nn.Linear] = replace_param_layer
-        self.replacement_factory[efficientnet_pytorch.utils.Conv2dSamePadding] = replace_param_layer
+        self.replacement_factory[efficientnet_pytorch.utils.Conv2dStaticSamePadding] = replace_param_layer
 
         self.replacement_factory[distiller.modules.Concat] = partial(
             replace_non_param_layer, RangeLinearQuantConcatWrapper)
