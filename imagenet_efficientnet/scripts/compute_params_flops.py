@@ -51,7 +51,7 @@ def measure_effnet_storage(state_dict):
             curr_ratio = 1.
 
         if '_fc.weight' in name:
-            curr_ratio = 16. / 2.5
+            curr_ratio = 16. / 2.4
 
         total += param.numel()
         if _is_not_pruned(name):

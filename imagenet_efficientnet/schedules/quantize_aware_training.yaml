@@ -11,7 +11,7 @@ quantizers:
         bits_bias: null
       _fc:
         bits_bias: null
-        bits_weights: 2.5
+        bits_weights: 2.4
         bits_activations: null
       _conv_stem:
         bits_bias: null

@@ -104,7 +104,7 @@ def ops_linear(x, layer, is_not_quantized):
     if is_not_quantized:
         multi_add = 1.0
     else:
-        multi_add = 2.5 / 16
+        multi_add = 2.4 / 16
 
     delta_ops = (layer.weight != 0).float().sum() * multi_add + layer.bias.numel()
     delta_ops_total = layer.weight.numel() + layer.bias.numel()
