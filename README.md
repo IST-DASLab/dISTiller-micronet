@@ -72,7 +72,7 @@ Please note, that as before you should change some values according to your mach
 To evaluate the checkpoint model Top-1 on ImageNet you should modify checkpoint path ('CHECKPOINT') in `scripts/eval.sh` accordingly.
 For final model evaluation run 
 
-`CHECPOINT=$ABSOLUTE_PATH_PREFIX/distiller-MicroNet/imagenet_efficientnet/checkpoints/effnet_imagenet_train_quantized_best.pth.tar`.
+`CHECKPOINT=$ABSOLUTE_PATH_PREFIX/distiller-MicroNet/imagenet_efficientnet/checkpoints/effnet_imagenet_train_quantized_best.pth.tar`.
 
 After this modifications, invoke Top-1 evaluation running:
 ```
