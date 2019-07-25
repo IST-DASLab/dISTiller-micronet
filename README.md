@@ -1,8 +1,6 @@
 # Distiller MicroNet
 We have forked the [Distiller](https://github.com/NervanaSystems/distiller/tree/torch1.1-integration) repository for the NeurIPS 2019 MicroNet challenge
 
-___
-
 ## Setup
 
 First, clone the forked [distiller repository](https://github.com/alexturn/distiller-MicroNet).
@@ -42,8 +40,6 @@ If you get `AttributeError: 'os' module does not have 'sched_getaffinity' method
 
 Also, do not forget `source setup.sh`.
 
-___
-
 ## Approach
 
 In general, the approach follows two steps. 
@@ -57,6 +53,7 @@ After that, we quantize the weights and activations to 4 BITS and use quantized 
 layer are not quantized.
 
 ### Results
+##
 
 The results of final model are listed in the table below. For details on competition metrics evaluation see the corresponding section.
 
@@ -65,7 +62,6 @@ The results of final model are listed in the table below. For details on competi
 | Storage      | 773464     	| 7856301       | 0.0985  |
 | FLOPs        | 77565880       | 544357991     | 0.1425  |	      |
 
-___
 
 ## Reproducing the checkpoints
 
@@ -84,7 +80,6 @@ $ bash scripts/train_quantized.sh
 ```
 Please note, that as before you should change some values according to your machine config.
 
-___
 
 ## Evaluation of checkpoints
 
@@ -98,8 +93,6 @@ After these modifications, invoke Top-1 evaluation running:
 $ bash scripts/eval.sh
 ```
 
-___
-
 ## Competition metrics (storage and flops)
 
 We accompany our submission with the evaluation script to compute storage requirements and number of flops. For each metric we have three values: the corresponding metric on final model,
@@ -111,8 +104,6 @@ $ python compute_params_flops.py
 ```
 under the `scripts` folder. The script is rather simple and is fully contained in `compute_params_flops.py`. For flops we modify the model forward and upload the weights to compute resulting metric.
 This pipeline is implemented in `scripts/effnet_flops.py`. We consider residual connections, activations and batch norm flops among others in this procedure.
-
-___
 
 ## Contact
 
