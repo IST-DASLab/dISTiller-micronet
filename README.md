@@ -53,14 +53,15 @@ After that, we quantize the weights and activations to 4 BITS and use quantized 
 layer are not quantized.
 
 ### Results
-##
 
 The results of final model are listed in the table below. For details on competition metrics evaluation see the corresponding section.
 
 | Metric       | Our Model      | Vanila model  |  Ratio  |
 |    :---:     |     :---:      |     :---:     |  :---:  |
 | Storage      | 773464     	| 7856301       | 0.0985  |
-| FLOPs        | 77565880       | 544357991     | 0.1425  |	      |
+| FLOPs        | 77565880       | 544357991     | 0.1425  |
+
+**Final relative MobileNet-V2 score:** `773464 / 6.9M + 77565880 / 1170 M` that is approximately **0.178392**
 
 
 ## Reproducing the checkpoints
