@@ -1,6 +1,8 @@
 # Distiller MicroNet
 We have forked the [Distiller](https://github.com/NervanaSystems/distiller/tree/torch1.1-integration) repository for the NeurIPS 2019 MicroNet challenge
 
+___
+
 ## Setup
 
 First, clone the forked [distiller repository](https://github.com/alexturn/distiller-MicroNet).
@@ -16,6 +18,8 @@ $ pip install -e .
 
 **Google Cloud.** If you are using Google cloud or otherwise want to start installation from scratch, the [Cookbook](https://github.com/alexturn/distiller-MicroNet/blob/master/workspace/Cookbook.md) may be useful.
 
+**Final checkpoint.** Download final model [checkpoint](https://www.dropbox.com/s/ce2kwplnyc3jdl9/effnet_imagenet_train_quantized_best.pth.tar?dl=0) file `effnet_imagenet_train_quantized_best.pth.tar`. After that move it
+in folder `distiller-MicroNet/imagenet_efficientnet/checkpoints`.
 
 ### EfficientNet
 To use EfficientNet achitecture there are essentially two options. 
@@ -38,6 +42,8 @@ If you get `AttributeError: 'os' module does not have 'sched_getaffinity' method
 
 Also, do not forget `source setup.sh`.
 
+___
+
 ## Approach
 
 In general, the approach follows two steps. 
@@ -49,6 +55,17 @@ After that, we quantize the weights and activations to 4 BITS and use quantized 
 
 **Notes:** We do not quantize the bias term and first convolution (`_conv_stem` layer of PyTorch model) including its activations, the last linear layer weight is quantized to a fractional number of BITs 2.5 the activations of this
 layer are not quantized.
+
+### Results
+
+The results of final model are listed in the table below. For details on competition metrics evaluation see the corresponding section.
+
+| Metric       | Our Model      | Vanila model  |  Ratio  |
+|    :---:     |     :---:      |     :---:     |  :---:  |
+| Storage      | 773464     	| 7856301       | 0.0985  |
+| FLOPs        | 77565880       | 544357991     | 0.1425  |	      |
+
+___
 
 ## Reproducing the checkpoints
 
@@ -65,23 +82,27 @@ After that, quantization follows. It can be invoked with command
 ```
 $ bash scripts/train_quantized.sh
 ```
-Please note, that as before you should change some values according to your machine config. 
+Please note, that as before you should change some values according to your machine config.
+
+___
 
 ## Evaluation of checkpoints
 
 To evaluate the checkpoint model Top-1 on ImageNet you should modify checkpoint path ('CHECKPOINT') in `scripts/eval.sh` accordingly.
-For final model evaluation run 
+For final model evaluation modify checkpoint path as follows 
 
 ```CHECKPOINT=$ABSOLUTE_PATH_PREFIX/distiller-MicroNet/imagenet_efficientnet/checkpoints/effnet_imagenet_train_quantized_best.pth.tar```
 
-After this modifications, invoke Top-1 evaluation running:
+After these modifications, invoke Top-1 evaluation running:
 ```
 $ bash scripts/eval.sh
 ```
 
+___
+
 ## Competition metrics (storage and flops)
 
-We accompany our submission with the evaluation script to compute storage requirements and number of flops. For each metric we have three values the corresponding metric on final model,
+We accompany our submission with the evaluation script to compute storage requirements and number of flops. For each metric we have three values: the corresponding metric on final model,
 metric of vanila (i.e. model before pruning and quantization) and the ratio of both. 
 
 To invoke the metrics script run
@@ -90,6 +111,8 @@ $ python compute_params_flops.py
 ```
 under the `scripts` folder. The script is rather simple and is fully contained in `compute_params_flops.py`. For flops we modify the model forward and upload the weights to compute resulting metric.
 This pipeline is implemented in `scripts/effnet_flops.py`. We consider residual connections, activations and batch norm flops among others in this procedure.
+
+___
 
 ## Contact
 
