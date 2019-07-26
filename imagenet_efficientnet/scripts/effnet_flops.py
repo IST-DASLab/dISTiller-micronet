@@ -183,7 +183,7 @@ class MBConvBlock(nn.Module):
         self._project_conv = Conv2d(in_channels=oup, out_channels=final_oup, kernel_size=1, bias=False)
         self._bn2 = nn.BatchNorm2d(num_features=final_oup, momentum=self._bn_mom, eps=self._bn_eps)
 
-    def forward(self, inputs, drop_connect_rate=None, is_first=False):
+    def forward(self, inputs, drop_connect_rate=None):
         """
         if is_first (this is the first block of all),
         then the (only) first operation in this block should be full precision
@@ -193,33 +193,31 @@ class MBConvBlock(nn.Module):
 
         x = inputs
         if self._block_args.expand_ratio != 1:
-            x, delta_ops, delta_ops_total = self._expand_conv(inputs, is_first)
-            is_first = False
+            x, delta_ops, delta_ops_total = self._expand_conv(inputs, False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-            delta_ops, delta_ops_total = ops_bn(x, False)
+            delta_ops, delta_ops_total = ops_bn(x, True)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x = self._bn0(x)
 
-            delta_ops, delta_ops_total = ops_non_linearity(x, False)
+            delta_ops, delta_ops_total = ops_non_linearity(x, True)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x = relu_fn(x)
 
-        x, delta_ops, delta_ops_total = self._depthwise_conv(x, is_first)
-        is_first = False
+        x, delta_ops, delta_ops_total = self._depthwise_conv(x, False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        delta_ops, delta_ops_total = ops_bn(x, False)
+        delta_ops, delta_ops_total = ops_bn(x, True)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = self._bn1(x)
 
-        delta_ops, delta_ops_total = ops_non_linearity(x, False)
+        delta_ops, delta_ops_total = ops_non_linearity(x, True)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = relu_fn(x)
 
 
         if self.has_se:
-            delta_ops, delta_ops_total = ops_adaptive_avg_pool(x, False)
+            delta_ops, delta_ops_total = ops_adaptive_avg_pool(x, True)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x_squeezed = F.adaptive_avg_pool2d(x, 1)
 
@@ -240,7 +238,7 @@ class MBConvBlock(nn.Module):
         x, delta_ops, delta_ops_total = self._project_conv(x, False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        delta_ops, delta_ops_total = ops_bn(x, False)
+        delta_ops, delta_ops_total = ops_bn(x, True)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = self._bn2(x)
 
@@ -250,7 +248,7 @@ class MBConvBlock(nn.Module):
                 x = drop_connect(x, p=drop_connect_rate, training=self.training)
             x = x + inputs  # skip connection
 
-        delta_ops, delta_ops_total = ops_non_linearity(x, False)
+        delta_ops, delta_ops_total = ops_non_linearity(x, True)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         return x, ops, total_ops
 
@@ -316,17 +314,17 @@ class EfficientNet(nn.Module):
             drop_connect_rate = self._global_params.drop_connect_rate
             if drop_connect_rate:
                 drop_connect_rate *= float(idx) / len(self._blocks)
-            x, delta_ops, delta_ops_total = block(x, drop_connect_rate, idx==0)
+            x, delta_ops, delta_ops_total = block(x, drop_connect_rate)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
         x, delta_ops, delta_ops_total = self._conv_head(x, False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        delta_ops, delta_ops_total = ops_bn(x, False)
+        delta_ops, delta_ops_total = ops_bn(x, True)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = self._bn1(x)
 
-        delta_ops, delta_ops_total = ops_non_linearity(x, False)
+        delta_ops, delta_ops_total = ops_non_linearity(x, True)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = relu_fn(x)
 
@@ -338,7 +336,7 @@ class EfficientNet(nn.Module):
         x, delta_ops, delta_ops_total = self.extract_features(inputs)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        delta_ops, delta_ops_total = ops_adaptive_avg_pool(x, False)
+        delta_ops, delta_ops_total = ops_adaptive_avg_pool(x, True)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = F.adaptive_avg_pool2d(x, 1).squeeze(-1).squeeze(-1)
 

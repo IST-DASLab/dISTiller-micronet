@@ -60,8 +60,9 @@ The results of final model are listed in the table below. For details on competi
 | Metric       | Our Model      | Vanila model  |  Ratio  |
 |    :---:     |     :---:      |     :---:     |  :---:  |
 | Storage      | 773464     	| 7856301       | 0.0985  |
-| FLOPs        | 77629384       | 544357991     | 0.1426  |	      |
+| FLOPs        | 93664128       | 544357991     | 0.1722  |	      |
 
+**Final relative MobileNet-V2 score:** `773464 / 6.9M + 93664128 / 1170M` that is approximately **0.192151**
 
 ## Reproducing the checkpoints
 
@@ -96,7 +97,7 @@ $ bash scripts/eval.sh
 ## Competition metrics (storage and flops)
 
 We accompany our submission with the evaluation script to compute storage requirements and number of flops. For each metric we have three values: the corresponding metric on final model,
-metric of vanila (i.e. model before pruning and quantization) and the ratio of both. 
+metric of vanila (i.e. model before pruning and quantization) and the ratio of both. Among that final relative MobileNet-V2 score is computed.
 
 To invoke the metrics script run
 ```
@@ -104,6 +105,17 @@ $ python compute_params_flops.py
 ```
 under the `scripts` folder. The script is rather simple and is fully contained in `compute_params_flops.py`. For flops we modify the model forward and upload the weights to compute resulting metric.
 This pipeline is implemented in `scripts/effnet_flops.py`. We consider residual connections, activations and batch norm flops among others in this procedure.
+
+### FLOPs computation details
+
+By default all layers which are quantized in distiller will quantize the input of this layer respectively. In this terms, for quantized layer forward we have a gain in FLOPs determined by the
+number of bits in weight. We account on not qunatizing bias term where it is present by counting FLOPs for the bias addition in full precision. 
+
+The quantized layers in distiller by default perform output quantization (regardless of bias is not quantized). To account on that, for drop-out and relu operations that were before the qunatized layer we have a gain FLOPs as 
+this ops do not change the "quantization" properties. For skip connection, swiss-activation, bn layers and avg pooling we count the FLOPs in full precision.
+
+In `scripts/effnet_flops.py` each ops counter has a flag which determines whether consider qunatized ops or full precision ones.
+
 
 ## Contact
 

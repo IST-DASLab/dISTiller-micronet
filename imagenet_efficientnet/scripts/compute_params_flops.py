@@ -72,7 +72,6 @@ def measure_effnet_flops(model):
 
 if __name__ == '__main__':
     model = load_ckpt()
-    print(model)
     total_used_storage, total_storage = measure_effnet_storage(model.state_dict())
     print('Storage requirement for EfficientNET version b1:\n'
           f'\tTotal used storage: {total_used_storage:.0f},' 
@@ -84,3 +83,7 @@ if __name__ == '__main__':
           f'\tFLOPs: {ops:.0f},' 
           f' Vanila model FLOPs: {total_ops:.0f}',
           f' [Used ratio: {ops/total_ops:.6f}]')
+
+    print('Relative MobileNet-V2 score: '
+          f'{total_used_storage:.0f} / 6.9M + {ops:.0f} / 1170M = '
+          f'{total_used_storage / (6.9 * 1e6) + ops / (1170 * 1e6):.6f}')
