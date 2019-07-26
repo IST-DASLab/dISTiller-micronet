@@ -78,6 +78,15 @@ class Conv2dStaticSamePadding(nn.Conv2d):
         return (F.conv2d(x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups), *ops_conv(x, self, is_not_quantized))
 
 
+"""
+K: by the way, I wouldn't advise to use negative booleans as variable names,
+like you did with is_not_quantized. This makes things doubly confusing, and
+you yourself may forget that TRUE means NOT quantized, and FALSE means quantized.
+Good rule of thumb: do `true` for something actively done (e.g. quantization here),
+and `false` for something being `off`/disabled. If my corrections below are correct,
+I will fix this variable next time to be is_quantized.
+"""
+
 def ops_conv(x, layer, is_not_quantized):
     if is_not_quantized:
         multi_add = 1.0
@@ -174,12 +183,18 @@ class MBConvBlock(nn.Module):
         self._project_conv = Conv2d(in_channels=oup, out_channels=final_oup, kernel_size=1, bias=False)
         self._bn2 = nn.BatchNorm2d(num_features=final_oup, momentum=self._bn_mom, eps=self._bn_eps)
 
-    def forward(self, inputs, drop_connect_rate=None):
+    def forward(self, inputs, drop_connect_rate=None, is_first=False):
+        """
+        if is_first (this is the first block of all),
+        then the (only) first operation in this block should be full precision
+        """
+
         ops, total_ops = 0., 0.
 
         x = inputs
         if self._block_args.expand_ratio != 1:
-            x, delta_ops, delta_ops_total = self._expand_conv(inputs, False)
+            x, delta_ops, delta_ops_total = self._expand_conv(inputs, is_first)
+            is_first = False
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
             delta_ops, delta_ops_total = ops_bn(x, False)
@@ -190,7 +205,8 @@ class MBConvBlock(nn.Module):
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x = relu_fn(x)
 
-        x, delta_ops, delta_ops_total = self._depthwise_conv(x, False)
+        x, delta_ops, delta_ops_total = self._depthwise_conv(x, is_first)
+        is_first = False
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
         delta_ops, delta_ops_total = ops_bn(x, False)
@@ -206,7 +222,7 @@ class MBConvBlock(nn.Module):
             delta_ops, delta_ops_total = ops_adaptive_avg_pool(x, False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x_squeezed = F.adaptive_avg_pool2d(x, 1)
-            
+
             x_squeezed, delta_ops, delta_ops_total = self._se_reduce(x_squeezed, False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
@@ -216,7 +232,6 @@ class MBConvBlock(nn.Module):
 
             x_squeezed, delta_ops, delta_ops_total = self._se_expand(x_squeezed, False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
-            
 
             delta_ops, delta_ops_total = ops_non_linearity(x, False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
@@ -285,9 +300,11 @@ class EfficientNet(nn.Module):
     def extract_features(self, inputs):
         ops, total_ops = 0., 0.
 
+        # conv_stem is not quantized
         x, delta_ops, delta_ops_total = self._conv_stem(inputs, True)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
+        # still no quantization whatsoever
         delta_ops, delta_ops_total = ops_bn(x, True)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
@@ -299,7 +316,7 @@ class EfficientNet(nn.Module):
             drop_connect_rate = self._global_params.drop_connect_rate
             if drop_connect_rate:
                 drop_connect_rate *= float(idx) / len(self._blocks)
-            x, delta_ops, delta_ops_total = block(x, drop_connect_rate=drop_connect_rate)
+            x, delta_ops, delta_ops_total = block(x, drop_connect_rate, idx==0)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
         x, delta_ops, delta_ops_total = self._conv_head(x, False)
@@ -324,7 +341,7 @@ class EfficientNet(nn.Module):
         delta_ops, delta_ops_total = ops_adaptive_avg_pool(x, False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = F.adaptive_avg_pool2d(x, 1).squeeze(-1).squeeze(-1)
-        
+
         if self._dropout:
             delta_ops, delta_ops_total = ops_non_linearity(x, False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total

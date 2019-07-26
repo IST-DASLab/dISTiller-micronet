@@ -26,7 +26,10 @@ def _normalize_distiller_state_dict(state_dict):
 
 def load_ckpt():
     model = effnet_flops.EfficientNet.from_name('efficientnet-b1')
-    state_dict = torch.load(BEST_CKPT_PATH)
+    if not torch.cuda.is_available():
+        state_dict = torch.load(BEST_CKPT_PATH, map_location='cpu')
+    else:
+        state_dict = torch.load(BEST_CKPT_PATH)
     state_dict = _normalize_distiller_state_dict(state_dict['state_dict'])
     model.load_state_dict(state_dict)
     return model
