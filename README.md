@@ -111,8 +111,8 @@ This pipeline is implemented in `scripts/effnet_flops.py`. We consider residual 
 By default all layers which are quantized in distiller will quantize the input of this layer respectively. In this terms, for quantized layer forward we have a gain in FLOPs determined by the
 number of bits in weight. We account on not qunatizing bias term where it is present by counting FLOPs for the bias addition in full precision. 
 
-The quantized layers in distiller by default perform output quantization (regardless of bias is not quantized). To account on that, for drop-out and relu operations that were before the qunatized layer we have a gain FLOPs as 
-this ops do not change the "quantization" properties. For skip connection, swiss-activation, bn layers and avg pooling we count the FLOPs in full precision.
+The quantized layers in distiller by default perform output quantization (regardless of bias is not quantized). To account on that, for drop-out and relu operations, that were before the quantized layer, we have a gain in FLOPs as 
+this ops do not change the "quantization" properties. For skip connection, swiss-activation (EfficientNet feature), bn layers and avg pooling we count the FLOPs in full precision.
 
 In `scripts/effnet_flops.py` each ops counter has a flag which determines whether consider qunatized ops or full precision ones.
 
