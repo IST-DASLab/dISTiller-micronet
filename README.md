@@ -60,7 +60,7 @@ The results of final model are listed in the table below. For details on competi
 | Metric       | Our Model      | Vanila model  |  Ratio  |
 |    :---:     |     :---:      |     :---:     |  :---:  |
 | Storage      | 773464     	| 7856301       | 0.0985  |
-| FLOPs        | 93664128       | 544357991     | 0.1722  |	      |
+| FLOPs        | 93664128       | 544357991     | 0.1721  |	      |
 
 **Final relative MobileNet-V2 score:** `773464 / 6.9M + 93664128 / 1170M` that is approximately **0.192151**
 
