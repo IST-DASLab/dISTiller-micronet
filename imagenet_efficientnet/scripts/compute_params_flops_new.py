@@ -20,7 +20,7 @@ import numpy as np
 
 import distiller
 from distiller.models import create_model
-import effnet_flops
+import effnet_flops_new
 
 BEST_CKPT_PATH = '../checkpoints/effnet_imagenet_prune_base2_best.pth.tar'
 DATASET_NAME = 'imagenet'
@@ -33,7 +33,7 @@ def load_ckpt():
         return layer_name.replace('module.', '')
     def _normalize_distiller_state_dict(state_dict):
         return {_normalize_layer_name(k): v for k,v in state_dict.items()}
-    model = effnet_flops.EfficientNet.from_name('efficientnet-b1')
+    model = effnet_flops_new.EfficientNet.from_name('efficientnet-b1')
     if not torch.cuda.is_available():
         state_dict = torch.load(BEST_CKPT_PATH, map_location='cpu')
     else:
@@ -100,8 +100,7 @@ def compute_effnet_param_storage(state_dict, max_bits=16):
     return total_bits_used, total_bits
 
 
-def measure_effnet_flops(model):
-    # TODO: this possibly also needs check / reimplementation
+def compute_effnet_flops(model):
     return model(torch.ones(1,3,224,224))
 
 
@@ -110,8 +109,16 @@ if __name__ == "__main__":
     total_bits_used, total_bits = compute_effnet_param_storage(model.state_dict())
     total_bits_used = total_bits_used / 8 / 10 ** 6
     total_bits = total_bits / 8 / 10 ** 6
-    print('Storage requirement for EfficientNET version b1:\n'
-        f'\tTotal storage of original model: {total_bits:.4f} MBytes\n'
+    print('Storage requirement for EfficientNet version b1:\n'
         f'\tTotal storage of sparsified and quantized model: {total_bits_used:.4f} MBytes\n'
+        f'\tTotal storage of original model: {total_bits:.4f} MBytes\n'
         f'\tRatio {total_bits_used/total_bits:.4f}')
+
+    x, ops, full_ops = compute_effnet_flops(model)
+    ops /= 1e6
+    full_ops /= 1e6
+    print('EfficientNet version b-1 FLOPS requirement:\n'
+        f'\tTotal MFLOPs of sparsified and quantized model {ops:.4f}',
+        f'\tTotal MFLOPs original model {full_ops:.4f}',
+        )
 
