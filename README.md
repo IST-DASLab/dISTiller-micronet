@@ -55,14 +55,16 @@ layer are not quantized.
 ### Results
 ##
 
-The results of final model are listed in the table below. For details on competition metrics evaluation see the corresponding section.
+The results of final model are listed in the table below. We provide them in terms MBytes and MFLOPs for easier proof-checking against the organizers' computation of EfficientNet storage and FLOPs. For details on competition metrics evaluation see the corresponding section.
 
-| Metric       | Our Model      | Vanila model  |  Ratio  |
+| Metric       | Our Model      | Vanilla model  |  Relative improvement (Our/Vanilla)  |
 |    :---:     |     :---:      |     :---:     |  :---:  |
-| Storage      | 773464     	| 7856301       | 0.0985  |
-| FLOPs        | 93664128       | 544357991     | 0.1721  |	      |
+| Storage  | 2.4192 MBytes (604808 params)  | 15.5263 MBytes | 0.1558  |
+| FLOPs        | 80.4694 MFLOPs  | 1052.3113 MFLOPs     | 0.0765  |
 
-**Final relative MobileNet-V2 score:** `773464 / 6.9M + 93664128 / 1170M` that is approximately **0.192151**
+**Final relative MobileNetV2 score:**
+
+**`604808 / 6.9M + 80469424 / 1170M = 0.0877 (storage) + 0.0688 (math ops) = 0.1564 (overall score)`**
 
 ## Reproducing the checkpoints
 
@@ -94,10 +96,9 @@ After these modifications, invoke Top-1 evaluation running:
 $ bash scripts/eval.sh
 ```
 
-## Competition metrics (storage and flops)
+## MicroNet Competition metrics (storage and flops)
 
-We accompany our submission with the evaluation script to compute storage requirements and number of flops. For each metric we have three values: the corresponding metric on final model,
-metric of vanila (i.e. model before pruning and quantization) and the ratio of both. Among that final relative MobileNet-V2 score is computed.
+We accompany our submission with the evaluation script to compute storage requirements (as MBytes and as millions of params) and number of FLOPs. In addition to that, the final score (relative to MobileNetV2) is computed.
 
 To invoke the metrics script run
 ```
@@ -108,10 +109,10 @@ This pipeline is implemented in `scripts/effnet_flops.py`. We consider residual 
 
 ### FLOPs computation details
 
-By default all layers which are quantized in distiller will quantize the input of this layer respectively. In this terms, for quantized layer forward we have a gain in FLOPs determined by the
+By default all layers which are quantized in `distiller` will quantize the input of this layer respectively. In this terms, for quantized layer forward we have a gain in FLOPs determined by the
 number of bits in weight. We account on not qunatizing bias term where it is present by counting FLOPs for the bias addition in full precision. 
 
-The quantized layers in distiller by default perform output quantization (regardless of bias is not quantized). To account on that, for drop-out and relu operations, that were before the quantized layer, we have a gain in FLOPs as 
+The quantized layers in `distiller` by default perform output quantization (regardless of bias is not quantized). To account on that, for drop-out and relu operations, that were before the quantized layer, we have a gain in FLOPs as 
 this ops do not change the "quantization" properties. For skip connection, swiss-activation (EfficientNet feature), bn layers and avg pooling we count the FLOPs in full precision.
 
 In `scripts/effnet_flops.py` each ops counter has a flag which determines whether consider qunatized ops or full precision ones.
