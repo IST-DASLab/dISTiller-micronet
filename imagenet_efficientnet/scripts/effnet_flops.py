@@ -187,12 +187,10 @@ class MBConvBlock(nn.Module):
             x, delta_ops, delta_ops_total = self._expand_conv(inputs, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-            # @Alex: same stuff here, True->False:
             delta_ops, delta_ops_total = ops_bn(x, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x = self._bn0(x)
 
-            # @Alex: and here:
             delta_ops, delta_ops_total = ops_non_linearity(x, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x = relu_fn(x)
@@ -200,20 +198,16 @@ class MBConvBlock(nn.Module):
         x, delta_ops, delta_ops_total = self._depthwise_conv(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        # @Alex: check this, changed to quantized (although this doesn't affect anything,
-        # as bn ops are "zero" here, want sync on this):
         delta_ops, delta_ops_total = ops_bn(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = self._bn1(x)
 
-        # @Alex: consequently, this will be quantized as well:
         delta_ops, delta_ops_total = ops_non_linearity(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = relu_fn(x)
 
 
         if self.has_se:
-            # @Alex: and this, too:
             delta_ops, delta_ops_total = ops_adaptive_avg_pool(x, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x_squeezed = F.adaptive_avg_pool2d(x, 1)
@@ -235,7 +229,6 @@ class MBConvBlock(nn.Module):
         x, delta_ops, delta_ops_total = self._project_conv(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        # @Alex: change True->False
         delta_ops, delta_ops_total = ops_bn(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = self._bn2(x)
@@ -246,7 +239,6 @@ class MBConvBlock(nn.Module):
                 x = drop_connect(x, p=drop_connect_rate, training=self.training)
             x = x + inputs  # skip connection
 
-        # @Alex: True->False, bn quantized
         delta_ops, delta_ops_total = ops_non_linearity(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         return x, ops, total_ops
@@ -320,12 +312,10 @@ class EfficientNet(nn.Module):
         x, delta_ops, delta_ops_total = self._conv_head(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        # @Alex: same thing, True->False here:
         delta_ops, delta_ops_total = ops_bn(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = self._bn1(x)
 
-        # Alex: True->False
         delta_ops, delta_ops_total = ops_non_linearity(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = relu_fn(x)
@@ -344,7 +334,6 @@ class EfficientNet(nn.Module):
         x, delta_ops, delta_ops_total = self.extract_features(inputs)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        # @Alex: output of feature extractor counts as quantized now:
         delta_ops, delta_ops_total = ops_adaptive_avg_pool(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = F.adaptive_avg_pool2d(x, 1).squeeze(-1).squeeze(-1)

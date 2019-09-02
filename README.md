@@ -1,5 +1,6 @@
 # Distiller MicroNet
-We have forked the [Distiller](https://github.com/NervanaSystems/distiller/tree/torch1.1-integration) repository for the NeurIPS 2019 MicroNet challenge
+
+This repository contains our solution for the NeurIPS 2019 MicroNet challenge. It includes a copy of the [Distiller](https://github.com/NervanaSystems/distiller/tree/torch1.1-integration) repository (it is copied instead of forked in order to keep the code private before submission time), as well as the final model and evaluation scripts. See below for setup instructions, model description and results in terms of competition's metrics.
 
 ## Setup
 
@@ -17,10 +18,10 @@ $ pip install -e .
 **Google Cloud.** If you are using Google cloud or otherwise want to start installation from scratch, the [Cookbook](https://github.com/alexturn/distiller-MicroNet/blob/master/workspace/Cookbook.md) may be useful.
 
 **Final checkpoint.** Download final model [checkpoint](https://www.dropbox.com/s/ce2kwplnyc3jdl9/effnet_imagenet_train_quantized_best.pth.tar?dl=0) file `effnet_imagenet_train_quantized_best.pth.tar`. After that move it
-in folder `distiller-MicroNet/imagenet_efficientnet/checkpoints`.
+to folder `distiller-MicroNet/imagenet_efficientnet/checkpoints`.
 
 ### EfficientNet
-To use EfficientNet achitecture there are essentially two options. 
+To use EfficientNet achitecture there are two options. 
 
 **Option 1.** Using manual installation described here [here](https://github.com/lukemelas/EfficientNet-PyTorch).
 
@@ -109,11 +110,10 @@ This pipeline is implemented in `scripts/effnet_flops.py`. We consider residual 
 
 ### FLOPs computation details
 
-By default all layers which are quantized in `distiller` will quantize the input of this layer respectively. In this terms, for quantized layer forward we have a gain in FLOPs determined by the
-number of bits in weight. We account on not qunatizing bias term where it is present by counting FLOPs for the bias addition in full precision. 
+By default, `distiller` quantizes input to all layers which are quantized themselves. Therefore, for each forward run through a quantized layer the quantization level for math operations is determined by the number of bits in parameters (e.g. weights are generally quantized, and biases not).
 
-The quantized layers in `distiller` by default perform output quantization (regardless of bias is not quantized). To account on that, for drop-out and relu operations, that were before the quantized layer, we have a gain in FLOPs as 
-this ops do not change the "quantization" properties. For skip connection, swiss-activation (EfficientNet feature), bn layers and avg pooling we count the FLOPs in full precision.
+The quantized layers in `distiller` by default perform output quantization (even though the bias parametes are not quantized). To account for that, for drop-out and relu operations, that were before the quantized layer, we have a gain in FLOPs as 
+this ops do not change the "quantization" properties. For skip connection, swish-activation (EfficientNet feature), bn layers and avg pooling we count the FLOPs in full precision.
 
 In `scripts/effnet_flops.py` each ops counter has a flag which determines whether consider qunatized ops or full precision ones.
 
@@ -121,6 +121,3 @@ In `scripts/effnet_flops.py` each ops counter has a flag which determines whethe
 ## Contact
 
 If you have any questions regarding evaluation, reproduction step or the implementation of competition metrics, feel free to contact us on: `alexmtcore@gmail.com`.
-
-
-
