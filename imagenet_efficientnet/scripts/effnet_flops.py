@@ -1,3 +1,14 @@
+"""
+This module implements a class to count math ops taken by forward run of EfficientNets
+on a specific model checkpoint that we evaluate, as well as on a default EfficientNet
+model for comparison.
+
+As per the rules of the competition, we count the ops for our model
+as fraction n_bits of that layer (input is quantized accordingly) / 32.
+Most activations are quantized. So non-linearities work with quantized version
+of layer outputs. Bias is not quantized.
+"""
+
 import torch
 
 from torch import nn
@@ -13,13 +24,11 @@ from efficientnet_pytorch.utils import (
     load_pretrained_weights,
 )
 
-from compute_params_flops import _is_not_quantized
 from functools import partial
 import math
-"""
-ATTENTION: Most activations are quantized. So non-linearities
-work with quantized version of layer outputs. Bias is not quantized.
-"""
+
+BITS_BASE = 32
+
 
 class Identity(nn.Module):
     def __init__(self,):
@@ -78,74 +87,57 @@ class Conv2dStaticSamePadding(nn.Conv2d):
         return (F.conv2d(x, self.weight, self.bias, self.stride, self.padding, self.dilation, self.groups), *ops_conv(x, self, is_not_quantized))
 
 
-"""
-K: by the way, I wouldn't advise to use negative booleans as variable names,
-like you did with is_not_quantized. This makes things doubly confusing, and
-you yourself may forget that TRUE means NOT quantized, and FALSE means quantized.
-Good rule of thumb: do `true` for something actively done (e.g. quantization here),
-and `false` for something being `off`/disabled. If my corrections below are correct,
-I will fix this variable next time to be is_quantized.
-"""
+# Number of operations per op ---------------------------------------------------------------------
 
-def ops_conv(x, layer, is_not_quantized):
-    if is_not_quantized:
-        multi_add = 1.0
-    else:
-        multi_add = 4 / 16
-
+def ops_conv(x, layer, is_not_quantized=False):
+    bits_ratio = 1.0 if is_not_quantized else 4.0 / BITS_BASE
     out_h = int((x.size()[2] + 2 * layer.padding[0] - layer.kernel_size[0]) /
-                    layer.stride[0] + 1)
+                layer.stride[0] + 1)
     out_w = int((x.size()[3] + 2 * layer.padding[1] - layer.kernel_size[1]) /
-                layer.stride[1] + 1)
-    delta_ops = (
-        (layer.weight != 0).float().sum() * out_h * out_w / layer.groups * multi_add
-       
-    )
-    delta_ops_total = (
-        layer.weight.numel() * out_h * out_w / layer.groups
-    )
-    if layer.bias is not None:  
-        delta_ops += out_h * out_w * layer.bias.size(0)
-        delta_ops_total += out_h * out_w * layer.bias.size(0)
-    return delta_ops, delta_ops_total
+            layer.stride[1] + 1)
+    assert len(layer.weight.size()) == 4, f"Kernel size len is not 4: {layer.weight.size()}"
+
+    kernel_els, full_kernel_els = (layer.weight != 0).float().sum(), layer.weight.numel()
+    output_els = out_h * out_w
+
+    mult_ops = kernel_els * output_els / layer.groups * bits_ratio
+    full_mult_ops = full_kernel_els * output_els / layer.groups
+
+    add_ops = (kernel_els - 1) * output_els / layer.groups * bits_ratio
+    full_add_ops = (full_kernel_els - 1) * output_els / layer.groups
+
+    # Simulate the bias here (we don't actually have it but need 
+    # to count it here instead of in bn):
+    # it is not quantized like any bias, *but can it count as sparse?*
+    add_ops += output_els * bits_ratio
+    full_add_ops += output_els
+    return add_ops + mult_ops, full_add_ops + full_mult_ops
+
 
 def ops_linear(x, layer, is_not_quantized):
-    if is_not_quantized:
-        multi_add = 1.0
-    else:
-        multi_add = 2.4 / 16
-
-    delta_ops = (layer.weight != 0).float().sum() * multi_add + layer.bias.numel()
+    bits_ratio = 1.0 if is_not_quantized else 2.4 / BITS_BASE
+    delta_ops = (layer.weight != 0).float().sum() * bits_ratio + layer.bias.numel()
     delta_ops_total = layer.weight.numel() + layer.bias.numel()
     return delta_ops, delta_ops_total
 
-def ops_non_linearity(x, is_not_quantized):
-    if is_not_quantized:
-        multi_add = 1.0
-    else:
-        multi_add = 4.0 / 16
 
-    delta_ops = x.numel() / x.size(0) * multi_add
-    delta_ops_total = x.numel() / x.size(0)
+def ops_non_linearity(x, is_not_quantized):
+    bits_ratio = 1.0 if is_not_quantized else 4.0 / BITS_BASE
+    # We use ReLU, which only does one operation per input:
+    delta_ops = x.numel() * bits_ratio
+    delta_ops_total = x.numel()
     return delta_ops, delta_ops_total
 
-def ops_bn(x, is_not_quantized):
-    if is_not_quantized:
-        multi_add = 1.0
-    else:
-        multi_add = 4.0 / 16
 
-    delta_ops_total = x.size(1) * x.size(2) * x.size(3)
-    return delta_ops_total * multi_add, delta_ops_total
+def ops_bn(x, is_not_quantized):
+    # Batchnorm operations are already counted as part of conv operations
+    # see `ops_conv` function.
+    return 0., 0.
 
 
 def ops_adaptive_avg_pool(x, is_not_quantized):
-    if is_not_quantized:
-        multi_add = 1.0
-    else:
-        multi_add = 4.0 / 16
-
-    delta_ops = x.size()[1] * x.size()[2] * x.size()[3] * multi_add
+    bits_ratio = 1.0 if is_not_quantized else 4.0 / BITS_BASE
+    delta_ops = x.size()[1] * x.size()[2] * x.size()[3] * bits_ratio
     delta_ops_total = x.size()[1] * x.size()[2] * x.size()[3]
     return delta_ops, delta_ops_total
 
@@ -185,60 +177,66 @@ class MBConvBlock(nn.Module):
 
     def forward(self, inputs, drop_connect_rate=None):
         """
-        if is_first (this is the first block of all),
-        then the (only) first operation in this block should be full precision
+        Forward run of the block, see comments to EfficientNet.forward for clarification.
         """
 
         ops, total_ops = 0., 0.
 
         x = inputs
         if self._block_args.expand_ratio != 1:
-            x, delta_ops, delta_ops_total = self._expand_conv(inputs, False)
+            x, delta_ops, delta_ops_total = self._expand_conv(inputs, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-            delta_ops, delta_ops_total = ops_bn(x, True)
+            # @Alex: same stuff here, True->False:
+            delta_ops, delta_ops_total = ops_bn(x, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x = self._bn0(x)
 
-            delta_ops, delta_ops_total = ops_non_linearity(x, True)
+            # @Alex: and here:
+            delta_ops, delta_ops_total = ops_non_linearity(x, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x = relu_fn(x)
 
-        x, delta_ops, delta_ops_total = self._depthwise_conv(x, False)
+        x, delta_ops, delta_ops_total = self._depthwise_conv(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        delta_ops, delta_ops_total = ops_bn(x, True)
+        # @Alex: check this, changed to quantized (although this doesn't affect anything,
+        # as bn ops are "zero" here, want sync on this):
+        delta_ops, delta_ops_total = ops_bn(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = self._bn1(x)
 
-        delta_ops, delta_ops_total = ops_non_linearity(x, True)
+        # @Alex: consequently, this will be quantized as well:
+        delta_ops, delta_ops_total = ops_non_linearity(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = relu_fn(x)
 
 
         if self.has_se:
-            delta_ops, delta_ops_total = ops_adaptive_avg_pool(x, True)
+            # @Alex: and this, too:
+            delta_ops, delta_ops_total = ops_adaptive_avg_pool(x, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x_squeezed = F.adaptive_avg_pool2d(x, 1)
 
-            x_squeezed, delta_ops, delta_ops_total = self._se_reduce(x_squeezed, False)
+            x_squeezed, delta_ops, delta_ops_total = self._se_reduce(x_squeezed, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-            delta_ops, delta_ops_total = ops_non_linearity(x_squeezed, False)
+            delta_ops, delta_ops_total = ops_non_linearity(x_squeezed, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x_squeezed = relu_fn(x_squeezed)
 
-            x_squeezed, delta_ops, delta_ops_total = self._se_expand(x_squeezed, False)
+            x_squeezed, delta_ops, delta_ops_total = self._se_expand(x_squeezed, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-            delta_ops, delta_ops_total = ops_non_linearity(x, False)
+            delta_ops, delta_ops_total = ops_non_linearity(x, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x = torch.sigmoid(x_squeezed) * x
 
-        x, delta_ops, delta_ops_total = self._project_conv(x, False)
+        x, delta_ops, delta_ops_total = self._project_conv(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        delta_ops, delta_ops_total = ops_bn(x, True)
+        # @Alex: change True->False
+        delta_ops, delta_ops_total = ops_bn(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = self._bn2(x)
 
@@ -248,7 +246,8 @@ class MBConvBlock(nn.Module):
                 x = drop_connect(x, p=drop_connect_rate, training=self.training)
             x = x + inputs  # skip connection
 
-        delta_ops, delta_ops_total = ops_non_linearity(x, True)
+        # @Alex: True->False, bn quantized
+        delta_ops, delta_ops_total = ops_non_linearity(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         return x, ops, total_ops
 
@@ -299,17 +298,18 @@ class EfficientNet(nn.Module):
         ops, total_ops = 0., 0.
 
         # conv_stem is not quantized
-        x, delta_ops, delta_ops_total = self._conv_stem(inputs, True)
+        x, delta_ops, delta_ops_total = self._conv_stem(inputs, is_not_quantized=True)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
         # still no quantization whatsoever
-        delta_ops, delta_ops_total = ops_bn(x, True)
+        delta_ops, delta_ops_total = ops_bn(x, is_not_quantized=True)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        delta_ops, delta_ops_total = ops_non_linearity(x, True)
+        delta_ops, delta_ops_total = ops_non_linearity(x, is_not_quantized=True)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = relu_fn(x)
 
+        # quantization appears in these blocks:
         for idx, block in enumerate(self._blocks):
             drop_connect_rate = self._global_params.drop_connect_rate
             if drop_connect_rate:
@@ -317,35 +317,44 @@ class EfficientNet(nn.Module):
             x, delta_ops, delta_ops_total = block(x, drop_connect_rate)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        x, delta_ops, delta_ops_total = self._conv_head(x, False)
+        x, delta_ops, delta_ops_total = self._conv_head(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        delta_ops, delta_ops_total = ops_bn(x, True)
+        # @Alex: same thing, True->False here:
+        delta_ops, delta_ops_total = ops_bn(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = self._bn1(x)
 
-        delta_ops, delta_ops_total = ops_non_linearity(x, True)
+        # Alex: True->False
+        delta_ops, delta_ops_total = ops_non_linearity(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = relu_fn(x)
 
         return x, ops, total_ops
 
     def forward(self, inputs):
+        """
+        Forward run of the model, modified to count all operations (summations and multiplications).
+        An operation with quantized model is computed as a n_bits / BITS_BASE fraction of operation.
+        This function counts math ops of a quantized and sparsified model, as well as of original model
+        (which is needed to understand relative improvement of these operations within architecture).
+        """
         ops, total_ops = 0., 0.
         
         x, delta_ops, delta_ops_total = self.extract_features(inputs)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
 
-        delta_ops, delta_ops_total = ops_adaptive_avg_pool(x, True)
+        # @Alex: output of feature extractor counts as quantized now:
+        delta_ops, delta_ops_total = ops_adaptive_avg_pool(x, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = F.adaptive_avg_pool2d(x, 1).squeeze(-1).squeeze(-1)
 
         if self._dropout:
-            delta_ops, delta_ops_total = ops_non_linearity(x, False)
+            delta_ops, delta_ops_total = ops_non_linearity(x, is_not_quantized=False)
             ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
             x = F.dropout(x, p=self._dropout, training=self.training)
 
-        delta_ops, delta_ops_total = ops_linear(x, self._fc, False)
+        delta_ops, delta_ops_total = ops_linear(x, self._fc, is_not_quantized=False)
         ops, total_ops = ops + delta_ops, total_ops + delta_ops_total
         x = self._fc(x)
         return x, ops, total_ops
@@ -376,3 +385,4 @@ class EfficientNet(nn.Module):
         valid_models = ['efficientnet_b'+str(i) for i in range(num_models)]
         if model_name.replace('-','_') not in valid_models:
             raise ValueError('model_name should be one of: ' + ', '.join(valid_models))
+
