@@ -61,11 +61,11 @@ The results of final model are listed in the table below. We provide them in ter
 | Metric       | Our Model      | Vanilla model  |  Relative improvement (Our/Vanilla)  |
 |    :---:     |     :---:      |     :---:     |  :---:  |
 | Storage  | 2.4192 MBytes (604808 params)  | 15.5263 MBytes | 0.1558  |
-| FLOPs        | 80.4694 MFLOPs  | 1052.3113 MFLOPs     | 0.0765  |
+| FLOPs        | 84.3883 MFLOPs  | 1078.0427 MFLOPs     | 0.0783  |
 
 **Final relative MobileNetV2 score:**
 
-**`604808 / 6.9M + 80469424 / 1170M = 0.0877 (storage) + 0.0688 (math ops) = 0.1564 (overall score)`**
+**`604808 / 6.9M + 84388336 / 1170M = 0.0877 (storage) + 0.0721 (math ops) = 0.1598 (overall score)`**
 
 ## Reproducing the checkpoints
 

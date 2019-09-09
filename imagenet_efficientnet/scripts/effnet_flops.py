@@ -122,10 +122,12 @@ def ops_linear(x, layer, is_not_quantized):
 
 
 def ops_non_linearity(x, is_not_quantized):
+    nonlinearity = 'swish'  # relu_fn is actually swish
     bits_ratio = 1.0 if is_not_quantized else 4.0 / BITS_BASE
+    nonlinearity_ops = 3
     # We use ReLU, which only does one operation per input:
-    delta_ops = x.numel() * bits_ratio
-    delta_ops_total = x.numel()
+    delta_ops = x.numel() * bits_ratio * nonlinearity_ops
+    delta_ops_total = x.numel() * nonlinearity_ops
     return delta_ops, delta_ops_total
 
 
