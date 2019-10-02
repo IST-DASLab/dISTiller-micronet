@@ -115,7 +115,7 @@ def ops_conv(x, layer, is_not_quantized=False):
 
 
 def ops_linear(x, layer, is_not_quantized):
-    bits_ratio = 1.0 if is_not_quantized else 2.4 / BITS_BASE
+    bits_ratio = 1.0 if is_not_quantized else 3. / BITS_BASE  # changed from 2.5 for the purposes of evaluation!
     delta_ops = (layer.weight != 0).float().sum() * bits_ratio + layer.bias.numel()
     delta_ops_total = layer.weight.numel() + layer.bias.numel()
     # to account for additions and multiplications

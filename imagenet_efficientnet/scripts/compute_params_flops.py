@@ -81,7 +81,7 @@ def compute_effnet_param_storage(state_dict, max_bits=16):
             param_bits = max_bits
         elif '_fc.weight' in name:
             # last linear layer is quantized to 2.5
-            param_bits = 2.5
+            param_bits = 3  # Changed from 2.5 for the purposes of evaluation!
         else:
             # all other cases
             param_bits = 4
@@ -127,6 +127,7 @@ def get_final_scores(storage_bits, num_math_ops):
     """
     BASELINE_STORAGE_PARAMS = 6.9e6
     BASELINE_NUM_MATH_OPS = 1170e6
+    print(num_math_ops)
     score_storage = storage_bits / 32 / BASELINE_STORAGE_PARAMS
     score_math_ops = num_math_ops / BASELINE_NUM_MATH_OPS
     return score_storage, score_math_ops, score_storage + score_math_ops
