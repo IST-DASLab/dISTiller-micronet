@@ -28,7 +28,7 @@ from functools import partial
 import math
 
 BITS_BASE = 32
-
+QUANTIZED_ADD = False  # counts additions as quantized iff True
 
 class Identity(nn.Module):
     def __init__(self,):
@@ -90,7 +90,9 @@ class Conv2dStaticSamePadding(nn.Conv2d):
 # Number of operations per op ---------------------------------------------------------------------
 
 def ops_conv(x, layer, is_not_quantized=False):
-    bits_ratio = 1.0 if is_not_quantized else 4.0 / BITS_BASE
+    bits_ratio_mult = 1.0 if is_not_quantized else 4.0 / BITS_BASE
+    bits_ratio_add = bits_ratio_mult if QUANTIZED_ADD else 1.0
+
     out_h = int((x.size()[2] + 2 * layer.padding[0] - layer.kernel_size[0]) /
                 layer.stride[0] + 1)
     out_w = int((x.size()[3] + 2 * layer.padding[1] - layer.kernel_size[1]) /
@@ -100,27 +102,31 @@ def ops_conv(x, layer, is_not_quantized=False):
     kernel_els, full_kernel_els = (layer.weight != 0).float().sum(), layer.weight.numel()
     output_els = out_h * out_w
 
-    mult_ops = kernel_els * output_els / layer.groups * bits_ratio
+    mult_ops = kernel_els * output_els / layer.groups * bits_ratio_mult
     full_mult_ops = full_kernel_els * output_els / layer.groups
 
-    add_ops = (kernel_els - 1) * output_els / layer.groups * bits_ratio
+    add_ops = (kernel_els - 1) * output_els / layer.groups * bits_ratio_add
     full_add_ops = (full_kernel_els - 1) * output_els / layer.groups
 
     # Simulate the bias here (we don't actually have it but need 
     # to count it here instead of in bn):
     # it is not quantized like any bias, *but can it count as sparse?*
-    add_ops += output_els * bits_ratio
+    add_ops += output_els * bits_ratio_add
     full_add_ops += output_els
     return add_ops + mult_ops, full_add_ops + full_mult_ops
 
 
 def ops_linear(x, layer, is_not_quantized):
-    bits_ratio = 1.0 if is_not_quantized else 3. / BITS_BASE  # changed from 2.5 for the purposes of evaluation!
-    delta_ops = (layer.weight != 0).float().sum() * bits_ratio + layer.bias.numel()
+    bits_ratio_mult = 1.0 if is_not_quantized else 3. / BITS_BASE  # changed from 2.5 for the purposes of evaluation!
+    bits_ratio_add = bits_ratio_mult if QUANTIZED_ADD else 1.0
+    
+    delta_ops = (layer.weight != 0).float().sum() * bits_ratio_mult + layer.bias.numel()
     delta_ops_total = layer.weight.numel() + layer.bias.numel()
-    # to account for additions and multiplications
-    delta_ops *= 2
-    delta_ops_total *= 2
+
+    # to account for additions and multiplications:
+    delta_ops += (layer.weight != 0).float().sum() * bits_ratio_add + layer.bias.numel()
+    delta_ops_total += layer.weight.numel() + layer.bias.numel()
+
     return delta_ops, delta_ops_total
 
 
