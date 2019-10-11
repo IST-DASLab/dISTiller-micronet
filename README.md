@@ -2,6 +2,8 @@
 
 This repository contains our solution for the NeurIPS 2019 MicroNet challenge. It includes a copy of the [Distiller](https://github.com/NervanaSystems/distiller/tree/torch1.1-integration) repository (it is copied instead of forked in order to keep the code private before submission time), as well as the final model and evaluation scripts. See below for setup instructions, model description and results in terms of competition's metrics.
 
+NOTE: the scores are updated!
+
 ## Setup
 
 First, clone the forked [distiller repository](https://github.com/alexturn/distiller-MicroNet).
@@ -61,11 +63,11 @@ The results of final model are listed in the table below. We provide them in ter
 | Metric       | Our Model      | Vanilla model  |  Relative improvement (Our/Vanilla)  |
 |    :---:     |     :---:      |     :---:     |  :---:  |
 | Storage  | 2.4472 MBytes (611808 params)  | 15.5263 MBytes | 0.1576  |
-| FLOPs        | 84.4397 MFLOPs  | 1079.3237 MFLOPs     | 0.0782  |
+| FLOPs        | 304.8332 MFLOPs  | 1079.3237 MFLOPs     | 0.2824  |
 
 **Final relative MobileNetV2 score:**
 
-**`611808 / 6.9M + 84439736 / 1170M = 0.0887 (storage) + 0.0722 (math ops) = 0.1608 (overall score)`**
+**`611808 / 6.9M + 304833216 / 1170M = 0.0887 (storage) + 0.2605 (math ops) = 0.3492 (overall score)`**
 
 ## Reproducing the checkpoints
 
@@ -115,7 +117,7 @@ By default, `distiller` quantizes input to all layers which are quantized themse
 The quantized layers in `distiller` by default perform output quantization (even though the bias parametes are not quantized). To account for that, for drop-out and relu operations, that were before the quantized layer, we have a gain in FLOPs as 
 this ops do not change the "quantization" properties. For skip connection, swish-activation (EfficientNet feature), bn layers and avg pooling we count the FLOPs in full precision.
 
-In `scripts/effnet_flops.py` each ops counter has a flag which determines whether consider qunatized ops or full precision ones.
+In `scripts/effnet_flops.py` each ops counter has a flag which determines whether consider qunatized ops or full precision ones. UPDATEE: additions are now counted at 32 bit precision.
 
 
 ## Contact

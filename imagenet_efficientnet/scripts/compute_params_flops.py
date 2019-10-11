@@ -127,7 +127,7 @@ def get_final_scores(storage_bits, num_math_ops):
     """
     BASELINE_STORAGE_PARAMS = 6.9e6
     BASELINE_NUM_MATH_OPS = 1170e6
-    print(num_math_ops)
+    print(num_math_ops.item())
     score_storage = storage_bits / 32 / BASELINE_STORAGE_PARAMS
     score_math_ops = num_math_ops / BASELINE_NUM_MATH_OPS
     return score_storage, score_math_ops, score_storage + score_math_ops
