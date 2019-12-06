@@ -1,5 +1,7 @@
 # Distiller MicroNet
 
+**UPDATE:** The final score is **0.3772**, in `effnet_flops.py` the argument `is_not_quantized` of `ops_non_linearity` should be set to `True` value for the evaluation.
+
 This repository contains our solution for the NeurIPS 2019 MicroNet challenge. It includes a copy of the [Distiller](https://github.com/NervanaSystems/distiller/tree/torch1.1-integration) repository (it is copied instead of forked in order to keep the code private before submission time), as well as the final model and evaluation scripts. See below for setup instructions, model description and results in terms of competition's metrics.
 
 NOTE: the scores are updated!
